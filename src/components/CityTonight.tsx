@@ -6,6 +6,10 @@ import type { Level } from '../lib/sky/level';
 import type { CityReport } from '../lib/sky/report';
 import { Badge, Card } from './Card';
 
+// Phase angle: 0 new → 180 full → 360 new; eight emoji cover 45° each.
+const MOON_EMOJI = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'];
+const moonEmoji = (phaseAngle: number) => MOON_EMOJI[Math.round(phaseAngle / 45) % 8];
+
 const LEVEL_COLOR: Record<Level, string> = {
   excellent: colors.good,
   good: colors.glow,
@@ -61,7 +65,7 @@ export function CityTonight({ report }: { report: CityReport }) {
         )}
       </Row>
 
-      <Row icon="🌙" title={t('moonTitle')} level={sky.moon.level}>
+      <Row icon={moonEmoji(sky.moon.phaseAngle)} title={t('moonTitle')} level={sky.moon.level}>
         <Text style={styles.text}>{t(`moon_highlight_${sky.moon.highlight}`)}</Text>
         <Text style={styles.small}>
           {t('moonPhase', { pct: Math.round(sky.moon.illumination * 100) })}

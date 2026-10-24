@@ -21,6 +21,8 @@ export type GlowReason =
   | 'clean'
   | 'humid';
 
+const POSITIVE = new Set<GlowReason>(['canvas', 'clearWest', 'afterRain', 'clean']);
+
 export type GlowInputs = {
   localLow: number;
   localMid: number;
@@ -88,7 +90,10 @@ export function scoreGlow(i: GlowInputs): GlowForecast {
   }
 
   const score = Math.round(clamp(canvasScore * pathScore * airScore * rainFactor) * 100);
-  return { score, level: levelFromScore(score), reasons, inputs: i };
+  // Lead with what hurts; when the glow is unlikely, upbeat reasons only confuse.
+  const negatives = reasons.filter((r) => !POSITIVE.has(r));
+  const positives = score >= 25 ? reasons.filter((r) => POSITIVE.has(r)) : [];
+  return { score, level: levelFromScore(score), reasons: [...negatives, ...positives], inputs: i };
 }
 
 /** Value at the hour closest to `t`, averaged with its neighbours to smooth model noise. */

@@ -51,6 +51,7 @@ export default function SettingsScreen() {
                   value={settings.alerts[a.key]}
                   onValueChange={(v) => update({ alerts: { ...settings.alerts, [a.key]: v } })}
                   trackColor={{ true: colors.glow }}
+                  thumbColor="#FFFFFF"
                 />
               </View>
             ))}

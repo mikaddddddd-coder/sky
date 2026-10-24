@@ -12,8 +12,8 @@ export const SKY_GRADIENTS: Record<SkyPhase, readonly [string, string, ...string
 export const colors = {
   text: '#F5F3FF',
   textDim: 'rgba(245,243,255,0.65)',
-  card: 'rgba(255,255,255,0.08)',
-  cardBorder: 'rgba(255,255,255,0.14)',
+  card: 'rgba(12,10,35,0.42)',
+  cardBorder: 'rgba(255,255,255,0.18)',
   glow: '#FF8A5B',
   moon: '#E8E4FF',
   venus: '#FFE7A3',
