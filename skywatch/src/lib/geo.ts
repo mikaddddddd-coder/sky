@@ -9,6 +9,16 @@ export function distanceKm(lat1: number, lon1: number, lat2: number, lon2: numbe
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+/** Initial bearing in degrees (0 = north, clockwise) from point 1 toward point 2. */
+export function bearingDeg(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const p1 = rad(lat1);
+  const p2 = rad(lat2);
+  const dl = rad(lon2 - lon1);
+  const y = Math.sin(dl) * Math.cos(p2);
+  const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
 /** Point reached travelling `km` from (lat, lon) along `bearing` degrees (0 = north). */
 export function destinationPoint(lat: number, lon: number, bearing: number, km: number) {
   const d = km / R;

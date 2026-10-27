@@ -72,7 +72,7 @@ export default function GlowScene() {
                 <Text style={styles.unit}>%</Text>
               </View>
               <Text style={styles.caption}>
-                {t('glowTitle')} · {t(`level_${g.level}`)}
+                {t('glowTitle')} · {t(`glowLevel_${g.level}`)}
               </Text>
             </Rise>
           )}

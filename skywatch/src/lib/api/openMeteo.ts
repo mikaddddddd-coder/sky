@@ -8,6 +8,7 @@ export type HourlyWeather = {
   cloudMid: number[];
   cloudHigh: number[];
   humidity: number[];
+  temperature: number[]; // °C
   visibility: number[]; // meters
   precipitation: number[]; // mm
   precipProbability: number[]; // %
@@ -22,6 +23,7 @@ type ForecastResponse = {
     cloud_cover_mid: number[];
     cloud_cover_high: number[];
     relative_humidity_2m: number[];
+    temperature_2m: number[];
     visibility: number[];
     precipitation: number[];
     precipitation_probability: number[];
@@ -35,6 +37,7 @@ const HOURLY_VARS = [
   'cloud_cover_mid',
   'cloud_cover_high',
   'relative_humidity_2m',
+  'temperature_2m',
   'visibility',
   'precipitation',
   'precipitation_probability',
@@ -72,6 +75,7 @@ export async function fetchPointForecasts(points: { latitude: number; longitude:
       cloudMid: h.cloud_cover_mid,
       cloudHigh: h.cloud_cover_high,
       humidity: h.relative_humidity_2m,
+      temperature: h.temperature_2m,
       visibility: h.visibility,
       precipitation: h.precipitation,
       precipProbability: h.precipitation_probability,

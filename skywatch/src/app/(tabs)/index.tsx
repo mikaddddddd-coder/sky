@@ -1,93 +1,106 @@
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, RefreshControl, ScrollView, StyleSheet, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
 import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Glass } from '../../components/Glass';
-import {
-  ChevronRightIcon,
-  CloudIcon,
-  CycloneIcon,
-  DropIcon,
-  HighCloudIcon,
-  SparkleIcon,
-  UmbrellaIcon,
-} from '../../components/Icons';
 import { MoonDisc } from '../../components/MoonDisc';
 import { Rise, useCountUp } from '../../components/Motion';
-import { SceneBackground, skyPhaseFor } from '../../components/SceneBackground';
+import { skyPhaseFor } from '../../components/SceneBackground';
 import { SunArc } from '../../components/SunArc';
-import { colors, spacing, type } from '../../constants/theme';
+import { TonightBackdrop } from '../../components/TonightBackdrop';
+import { TyphoonRadar } from '../../components/TyphoonRadar';
+import { VenusMini } from '../../components/VenusMini';
+import { colors, spacing } from '../../constants/theme';
 import { formatTime } from '../../lib/format';
 import { useTonightReport } from '../../lib/report';
 import { useSettings } from '../../lib/settings';
 import type { Level } from '../../lib/sky/level';
 import type { CityReport } from '../../lib/sky/report';
 
+// Only the promising levels get colour; the rest stay quiet white.
 const LEVEL_COLOR: Record<Level, string> = {
   excellent: colors.good,
   good: '#FFC39A',
   fair: colors.text,
-  poor: colors.textDim,
+  poor: colors.text,
 };
 
-function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+// Every card on the page is the same height, so the stack reads as one rhythm.
+const CARD_HEIGHT = 176;
+
+// Type on this page runs in four steps: a small spaced label names each card,
+// one line says what tonight is like, the numbers are large and light, and
+// supporting detail is small and dim.
+function Card({ label, onPress, children }: { label: string; onPress?: () => void; children: React.ReactNode }) {
+  return (
+    <Glass onPress={onPress} style={{ height: CARD_HEIGHT }} contentStyle={styles.cardContent} sheen>
+      <Text style={styles.eyebrow}>{label}</Text>
+      <View style={styles.cardBody}>{children}</View>
+    </Glass>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.metric}>
       <Text style={styles.metricLabel}>{label}</Text>
-      <View style={styles.metricValueRow}>
-        {icon}
-        <Text style={styles.metricValue}>{value}</Text>
-      </View>
+      <Text style={styles.metricValue}>{value}</Text>
     </View>
   );
 }
 
-function HeroCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
+/** The city and its day at a glance, set straight on the sky rather than in a card. */
+function CityHeader({ r }: { r: CityReport }) {
   const { t, lang } = useSettings();
-  const time = (d: Date) => formatTime(d, r.city.timezone, lang);
+  const d = r.today;
+  return (
+    <View style={styles.cityHeader}>
+      <Text style={styles.cityName} numberOfLines={1}>
+        {r.city.name[lang]}
+      </Text>
+      {d && (
+        <View style={styles.cityToday}>
+          <Text style={styles.temp}>
+            {Math.round(d.tempMin)}° <Text style={styles.tempDash}>/</Text> {Math.round(d.tempMax)}°
+          </Text>
+          <Text style={styles.detail}>{t('todayHumidity', { min: Math.round(d.humidityMin), max: Math.round(d.humidityMax) })}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+function GlowCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
+  const { t } = useSettings();
   const g = r.glow;
   const pct = (v: number) => `${Math.round(v)}%`;
   const shown = useCountUp(g?.score ?? 0);
 
   return (
-    <Glass onPress={g ? onPress : undefined}>
-      <View style={styles.heroTop}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.city}>{r.city.name[lang]}</Text>
-          <Text style={styles.sub}>
-            {t('sunset')} {time(r.sky.sun.sunset)} · {t('civilDusk')} {time(r.sky.sun.civilDusk)}
-          </Text>
+    <Card label={t('glowTitle')} onPress={g ? onPress : undefined}>
+      <View style={styles.cardRow}>
+        <View style={styles.cardText}>
+          {g ? (
+            <>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={[styles.headline, { color: LEVEL_COLOR[g.level] }]}>{t(`glowLevel_${g.level}`)}</Text>
+              <View style={styles.metrics}>
+                <Metric label={t('metricLowCloud')} value={pct(g.inputs.localLow)} />
+                <Metric label={t('metricHighCloud')} value={`${pct(g.inputs.localMid)} / ${pct(g.inputs.localHigh)}`} />
+              </View>
+            </>
+          ) : (
+            <Text style={styles.detail}>{t('loadError')}</Text>
+          )}
         </View>
-        <View style={[styles.orb, { opacity: g ? 0.35 + (g.score / 100) * 0.65 : 0.3 }]} />
+        {g && (
+          <View style={styles.figureRow}>
+            <Text style={styles.figure}>{shown}</Text>
+            <Text style={styles.figureUnit}>%</Text>
+          </View>
+        )}
       </View>
-
-      {g ? (
-        <View style={styles.heroBottom}>
-          <View style={styles.metrics}>
-            <Metric icon={<CloudIcon color={colors.text} size={15} />} label={t('metricLowCloud')} value={pct(g.inputs.localLow)} />
-            <Metric
-              icon={<HighCloudIcon color={colors.text} size={15} />}
-              label={t('metricHighCloud')}
-              value={`${Math.round(g.inputs.localMid)} / ${pct(g.inputs.localHigh)}`}
-            />
-            <Metric icon={<DropIcon color={colors.text} size={15} />} label={t('metricHumidity')} value={pct(g.inputs.humidity)} />
-            <Metric icon={<UmbrellaIcon color={colors.text} size={15} />} label={t('metricRain')} value={pct(g.inputs.precipProbability)} />
-          </View>
-          <View style={styles.figureBox}>
-            <View style={styles.figureRow}>
-              <Text style={styles.figure}>{shown}</Text>
-              <Text style={styles.figureUnit}>%</Text>
-            </View>
-            <Text style={[styles.levelText, { color: LEVEL_COLOR[g.level] }]}>
-              {t('glowTitle')} · {t(`level_${g.level}`)}
-            </Text>
-          </View>
-        </View>
-      ) : (
-        <Text style={styles.sub}>{t('loadError')}</Text>
-      )}
-    </Glass>
+    </Card>
   );
 }
 
@@ -95,19 +108,19 @@ function SunCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
   const { t, lang } = useSettings();
   const time = (d: Date) => formatTime(d, r.city.timezone, lang);
   return (
-    <Glass onPress={onPress}>
-      <SunArc sunrise={r.sky.sun.sunrise} sunset={r.sky.sun.sunset} now={new Date()} />
+    <Card label={t('sunTitle')} onPress={onPress}>
+      <SunArc sunrise={r.sky.sun.sunrise} sunset={r.sky.sun.sunset} now={new Date()} height={76} />
       <View style={styles.split}>
-        <View>
-          <Text style={styles.sub}>{t('sunrise')}</Text>
+        <View style={styles.inlineTime}>
+          <Text style={styles.metricLabel}>{t('sunrise')}</Text>
           <Text style={styles.time}>{time(r.sky.sun.sunrise)}</Text>
         </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={styles.sub}>{t('sunset')}</Text>
+        <View style={styles.inlineTime}>
+          <Text style={styles.metricLabel}>{t('sunset')}</Text>
           <Text style={styles.time}>{time(r.sky.sun.sunset)}</Text>
         </View>
       </View>
-    </Glass>
+    </Card>
   );
 }
 
@@ -116,75 +129,82 @@ function MoonCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
   const time = (d: Date | null) => (d ? formatTime(d, r.city.timezone, lang) : '—');
   const m = r.sky.moon;
   return (
-    <Glass onPress={onPress}>
-      <View style={styles.moonRow}>
-        <View style={styles.moonSide}>
-          <Text style={styles.sub}>{t('moonrise_label')}</Text>
-          <Text style={styles.time}>{time(m.moonrise)}</Text>
+    <Card label={t('moonTitle')} onPress={onPress}>
+      <View style={styles.cardRow}>
+        <View style={styles.cardText}>
+          <View style={styles.headBlock}>
+            <Text style={styles.headline} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{t(`phase_${m.phaseName}`)}</Text>
+            <Text style={styles.detail} numberOfLines={1}>
+              {t(`moon_highlight_${m.highlight}`)}
+            </Text>
+          </View>
+          <View style={styles.metrics}>
+            <Metric label={t('moonrise_label')} value={time(m.moonrise)} />
+            <Metric label={t('moonset_label')} value={time(m.moonset)} />
+          </View>
         </View>
-        <MoonDisc size={96} illumination={m.illumination} waxing={m.waxing} />
-        <View style={[styles.moonSide, { alignItems: 'flex-end' }]}>
-          <Text style={styles.sub}>{t('moonset_label')}</Text>
-          <Text style={styles.time}>{time(m.moonset)}</Text>
-        </View>
+        <MoonDisc size={108} illumination={m.illumination} waxing={m.waxing} />
       </View>
-      <Text style={styles.center}>
-        {t(`phase_${m.phaseName}`)} · {t(`moon_highlight_${m.highlight}`)}
-      </Text>
-    </Glass>
+    </Card>
   );
 }
 
-function VenusRow({ r, onPress }: { r: CityReport; onPress: () => void }) {
+function VenusCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
   const { t } = useSettings();
   const v = r.sky.venus;
+  const c = r.sky.conjunction;
   return (
-    <Glass onPress={onPress}>
-      <View style={styles.listRow}>
-        <SparkleIcon color={colors.venus} size={20} />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.rowTitle}>{t('venusTitle')}</Text>
-          <Text style={styles.sub}>{t(`venus_highlight_${v.highlight}`)}</Text>
+    <Card label={t('venusTitle')} onPress={onPress}>
+      <View style={styles.cardRow}>
+        <View style={styles.cardText}>
+          <View style={styles.headBlock}>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={[styles.headline, { color: LEVEL_COLOR[v.level] }]}>{t(`venusLevel_${v.level}`)}</Text>
+            <Text style={[styles.detail, c && { color: colors.good }]} numberOfLines={2}>
+              {c ? t('conjunctionDetail', { deg: c.separation.toFixed(1) }) : t(`venus_highlight_${v.highlight}`)}
+            </Text>
+          </View>
         </View>
-        <Text style={[styles.levelText, { color: LEVEL_COLOR[v.level] }]}>{t(`level_${v.level}`)}</Text>
-        <ChevronRightIcon color={colors.textDim} size={18} />
+        <VenusMini venus={v} width={160} height={116} />
       </View>
-      {r.sky.conjunction && (
-        <View style={styles.listRow}>
-          <SparkleIcon color={colors.good} size={20} />
-          <Text style={[styles.sub, { flex: 1 }]}>{t('conjunctionDetail', { deg: r.sky.conjunction.separation.toFixed(1) })}</Text>
-        </View>
-      )}
-    </Glass>
+    </Card>
   );
 }
 
-function TyphoonRow({ r, count, onPress }: { r: CityReport; count: number; onPress: () => void }) {
+function TyphoonCard({ r, count, onPress }: { r: CityReport; count: number; onPress: () => void }) {
   const { t, lang } = useSettings();
   const ty = r.typhoon;
+  const near = r.nearestCyclone;
+  const city = r.city.name[lang];
   return (
-    <Glass onPress={onPress}>
-      <View style={styles.listRow}>
-        <CycloneIcon color={ty ? colors.typhoon : colors.text} size={20} />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.rowTitle}>{t('typhoonTitle')}</Text>
-          <Text style={styles.sub}>
-            {ty
-              ? t('typhoonHeadline', { name: ty.cyclone.name, city: r.city.name[lang] })
-              : count
-                ? t('typhoonActive', { n: count })
-                : t('typhoonNone')}
-          </Text>
+    <Card label={t('typhoonTitle')} onPress={onPress}>
+      <View style={styles.cardRow}>
+        <View style={styles.cardText}>
+          {ty ? (
+            <>
+              <View style={styles.figureRow}>
+                <Text style={styles.compactFigure}>{Math.round(ty.km)}</Text>
+                <Text style={styles.figureUnitSmall}>km</Text>
+              </View>
+              <Text style={styles.detail} numberOfLines={1}>
+                {t('typhoonFrom', { name: ty.cyclone.name, city })}
+              </Text>
+            </>
+          ) : (
+            <View style={styles.headBlock}>
+              <Text style={styles.headline} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{t('typhoonAllClear')}</Text>
+              <Text style={styles.detail} numberOfLines={2}>
+                {near
+                  ? t('typhoonNearestBrief', { name: near.cyclone.name, km: Math.round(near.km) })
+                  : count
+                    ? t('typhoonActive', { n: count })
+                    : t('typhoonNoneActive')}
+              </Text>
+            </View>
+          )}
         </View>
-        {ty && (
-          <View style={styles.figureRow}>
-            <Text style={styles.compactFigure}>{Math.round(ty.km)}</Text>
-            <Text style={styles.figureUnitSmall}>km</Text>
-          </View>
-        )}
-        <ChevronRightIcon color={colors.textDim} size={18} />
+        <TyphoonRadar r={r} size={116} />
       </View>
-    </Glass>
+    </Card>
   );
 }
 
@@ -193,19 +213,22 @@ function CityPage({ r, count, onOpen }: { r: CityReport; count: number; onOpen: 
   return (
     <View style={styles.stack}>
       <Rise>
-        <HeroCard r={r} onPress={() => onOpen('/glow')} />
+        <CityHeader r={r} />
       </Rise>
-      <Rise delay={70}>
+      <Rise delay={50}>
+        <GlowCard r={r} onPress={() => onOpen('/glow')} />
+      </Rise>
+      <Rise delay={100}>
         <SunCard r={r} onPress={() => onOpen('/sun')} />
       </Rise>
-      <Rise delay={140}>
+      <Rise delay={150}>
         <MoonCard r={r} onPress={() => onOpen('/moon')} />
       </Rise>
-      <Rise delay={210}>
-        <VenusRow r={r} onPress={() => onOpen('/venus')} />
+      <Rise delay={200}>
+        <VenusCard r={r} onPress={() => onOpen('/venus')} />
       </Rise>
-      <Rise delay={280}>
-        <TyphoonRow r={r} count={count} onPress={() => onOpen('/typhoon')} />
+      <Rise delay={250}>
+        <TyphoonCard r={r} count={count} onPress={() => onOpen('/typhoon')} />
       </Rise>
     </View>
   );
@@ -224,7 +247,8 @@ export default function TonightScreen() {
   const cities = report?.cities ?? [];
   const page = Math.min(index, Math.max(0, cities.length - 1));
   const selected = cities[page];
-  const phase = selected ? skyPhaseFor(new Date(), selected.sky.sun.sunset, selected.sky.sun.civilDusk) : 'dusk';
+  // Horizontal pager offset, so each city's sky can fade in as its page slides in.
+  const scrollX = useRef(new Animated.Value(0)).current;
   const jump = (i: number) => {
     pager.current?.scrollTo({ x: i * width, animated: true });
     setIndex(i);
@@ -232,10 +256,24 @@ export default function TonightScreen() {
 
   return (
     <View style={styles.fill}>
-      <SceneBackground scene={phase} />
+      {/* One sky per city, stacked in page order. Each fades in over the previous one as
+          its page slides in, so switching cities crossfades along with the swipe. */}
+      {cities.length === 0 && <TonightBackdrop phase="dusk" />}
+      {cities.map((r, i) => (
+        <Animated.View
+          key={r.city.id}
+          style={[
+            StyleSheet.absoluteFill,
+            i > 0 && { opacity: scrollX.interpolate({ inputRange: [(i - 1) * width, i * width], outputRange: [0, 1], extrapolate: 'clamp' }) },
+          ]}
+          pointerEvents="none"
+        >
+          <TonightBackdrop phase={skyPhaseFor(new Date(), r.sky.sun.sunset, r.sky.sun.civilDusk)} />
+        </Animated.View>
+      ))}
       <SafeAreaView style={styles.fill} edges={['top']}>
+        {/* The city name on each page is the title; up here is just freshness and the page dots. */}
         <View style={styles.header}>
-          <Text style={styles.title}>{t('tonightTitle')}</Text>
           <View style={styles.headerRow}>
             <Text style={styles.sub}>
               {report && selected ? t('updatedAt', { time: formatTime(report.generatedAt, selected.city.timezone, lang) }) : ' '}
@@ -261,11 +299,13 @@ export default function TonightScreen() {
         {error && !report && <Text style={[styles.sub, styles.padded]}>{t('loadError')}</Text>}
 
         {/* One page per followed city; swipe sideways to switch. */}
-        <ScrollView
+        <Animated.ScrollView
           ref={pager}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: true })}
           onMomentumScrollEnd={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / width))}
           style={styles.fill}
         >
@@ -285,7 +325,7 @@ export default function TonightScreen() {
               <Text style={styles.footer}>{t('dataSource')}</Text>
             </ScrollView>
           ))}
-        </ScrollView>
+        </Animated.ScrollView>
       </SafeAreaView>
     </View>
   );
@@ -301,31 +341,35 @@ const styles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.35)' },
   dotOn: { width: 16, backgroundColor: colors.text },
   padded: { paddingHorizontal: spacing.md },
-  title: { ...type.largeTitle, color: colors.text },
-  sub: { ...type.caption, color: colors.textDim, fontVariant: ['tabular-nums'] },
+  sub: { fontSize: 11, letterSpacing: 0.4, color: colors.textDim, fontVariant: ['tabular-nums'] },
   loading: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xl },
-  city: { ...type.title, color: colors.text },
-  heroTop: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
-  orb: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#F7B48A' },
-  heroBottom: { flexDirection: 'row', alignItems: 'flex-end', marginTop: spacing.md },
-  metrics: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.md },
-  metric: { width: '50%', gap: 4 },
-  metricLabel: { ...type.caption, color: colors.textDim },
-  metricValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  metricValue: { ...type.body, fontWeight: '500', color: colors.text, fontVariant: ['tabular-nums'] },
-  figureBox: { alignItems: 'flex-end' },
+  cityHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: spacing.xs, paddingTop: spacing.sm, paddingBottom: spacing.xs },
+  cityName: { fontSize: 36, fontWeight: '600', letterSpacing: -0.8, color: colors.text, flexShrink: 1 },
+  cityToday: { alignItems: 'flex-end', gap: 3, paddingBottom: 4 },
+  temp: { fontSize: 20, fontWeight: '200', letterSpacing: -0.2, color: colors.text, fontVariant: ['tabular-nums'] },
+  tempDash: { color: colors.textDim },
+  // Card label: small, spaced, quiet.
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: 'rgba(245,243,255,0.5)' },
+  // One line of verdict per card.
+  headline: { fontSize: 22, fontWeight: '600', letterSpacing: -0.3, color: colors.text },
+  headBlock: { gap: 4 },
+  // Supporting detail.
+  detail: { fontSize: 13, lineHeight: 18, color: colors.textDim, fontVariant: ['tabular-nums'] },
+  cardContent: { flex: 1, gap: spacing.sm },
+  cardBody: { flex: 1, justifyContent: 'space-between' },
+  cardRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  cardText: { flex: 1, alignSelf: 'stretch', justifyContent: 'space-between' },
+  metrics: { flexDirection: 'row', gap: spacing.lg },
+  metric: { gap: 2 },
+  metricLabel: { fontSize: 11, letterSpacing: 0.4, color: 'rgba(245,243,255,0.5)' },
+  metricValue: { fontSize: 17, fontWeight: '400', color: colors.text, fontVariant: ['tabular-nums'] },
   figureRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  figure: { fontSize: 64, lineHeight: 68, fontWeight: '200', letterSpacing: -2, color: colors.text, fontVariant: ['tabular-nums'] },
-  figureUnit: { fontSize: 20, fontWeight: '300', color: colors.text, marginTop: 8, marginLeft: 2 },
-  levelText: { ...type.caption, fontWeight: '500' },
-  compactFigure: { fontSize: 36, lineHeight: 40, fontWeight: '200', letterSpacing: -1, color: colors.text, fontVariant: ['tabular-nums'] },
-  figureUnitSmall: { fontSize: 14, fontWeight: '300', color: colors.text, marginTop: 5, marginLeft: 2 },
+  figure: { fontSize: 80, lineHeight: 84, fontWeight: '100', letterSpacing: -3, color: colors.text, fontVariant: ['tabular-nums'] },
+  figureUnit: { fontSize: 18, fontWeight: '200', color: colors.textDim, marginTop: 10, marginLeft: 2 },
+  compactFigure: { fontSize: 52, lineHeight: 56, fontWeight: '100', letterSpacing: -1.5, color: colors.text, fontVariant: ['tabular-nums'] },
+  figureUnitSmall: { fontSize: 13, fontWeight: '300', color: colors.textDim, marginTop: 6, marginLeft: 3 },
   split: { flexDirection: 'row', justifyContent: 'space-between' },
-  time: { fontSize: 24, fontWeight: '500', color: colors.text, fontVariant: ['tabular-nums'] },
-  moonRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  moonSide: { width: 84, gap: 2 },
-  center: { ...type.caption, color: colors.text, textAlign: 'center' },
-  listRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  rowTitle: { ...type.headline, color: colors.text },
-  footer: { ...type.caption, fontSize: 11, color: colors.textDim, textAlign: 'center', marginTop: spacing.md },
+  inlineTime: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  time: { fontSize: 28, fontWeight: '200', letterSpacing: -0.4, color: colors.text, fontVariant: ['tabular-nums'] },
+  footer: { fontSize: 11, color: colors.textDim, textAlign: 'center', marginTop: spacing.md },
 });
