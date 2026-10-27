@@ -70,10 +70,16 @@ export function MoonDisc({ size, illumination, waxing }: { size: number; illumin
       </View>
 
       {MOON_PHOTO && (
-        <Image
-          source={MOON_PHOTO}
-          style={{ position: 'absolute', left: size * 0.02, top: size * 0.02, width: size * 0.96, height: size * 0.96, borderRadius: size }}
-        />
+        // The photo is zoomed slightly inside a round clip so the dark sky
+        // around the disc never shows as a rim.
+        <View
+          style={{ position: 'absolute', left: size * 0.02, top: size * 0.02, width: size * 0.96, height: size * 0.96, borderRadius: size, overflow: 'hidden' }}
+        >
+          <Image
+            source={MOON_PHOTO}
+            style={{ position: 'absolute', left: -size * 0.05, top: -size * 0.05, width: size * 1.06, height: size * 1.06 }}
+          />
+        </View>
       )}
 
       {showShadow && (

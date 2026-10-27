@@ -1,3 +1,4 @@
+import { BlurView } from 'expo-blur';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -39,8 +40,8 @@ export default function GlowScene() {
 
   return (
     <View style={styles.fill}>
+      <GlowSky horizon={0.5} />
       <View style={styles.sky}>
-        <GlowSky />
         <SafeAreaView edges={['top']} style={styles.skyText}>
           {r && g && (
             <Rise delay={150}>
@@ -60,6 +61,8 @@ export default function GlowScene() {
       </View>
 
       <View style={styles.sheet}>
+        <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, styles.sheetTint]} />
         {r && g && (
           <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             <Rise delay={250}>
@@ -93,7 +96,7 @@ const textShadow = { textShadowColor: 'rgba(60,20,50,0.35)', textShadowOffset: {
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: SHEET },
-  sky: { flex: 0.46, minHeight: 230, overflow: 'hidden' },
+  sky: { flex: 0.46, minHeight: 230 },
   skyText: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   eyebrow: { ...type.body, fontWeight: '500', color: colors.text, ...textShadow },
   figureRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: spacing.xs },
@@ -103,12 +106,13 @@ const styles = StyleSheet.create({
   sheet: {
     flex: 0.54,
     marginTop: -28,
-    backgroundColor: SHEET,
+    overflow: 'hidden',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(255,255,255,0.22)',
   },
+  sheetTint: { backgroundColor: 'rgba(40,20,48,0.32)' },
   content: { padding: spacing.lg, paddingBottom: 110, gap: spacing.sm },
   headline: { fontSize: 24, fontWeight: '600', letterSpacing: -0.4, color: colors.text },
   reasons: { gap: spacing.sm, marginVertical: spacing.sm },

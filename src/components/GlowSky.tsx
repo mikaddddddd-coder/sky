@@ -57,7 +57,8 @@ function CloudBand({ c, w, h, index }: { c: Cloud; w: number; h: number; index: 
   );
 }
 
-export function GlowSky() {
+/** `horizon` is where the sun sits, as a fraction of the sky's height. */
+export function GlowSky({ horizon = 1 }: { horizon?: number }) {
   const [size, setSize] = useState({ w: 390, h: 360 });
   const onLayout = (e: LayoutChangeEvent) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height });
   const id = useSvgId('glowsky');
@@ -101,7 +102,7 @@ export function GlowSky() {
         style={{
           position: 'absolute',
           left: w * 0.62 - sunR * 3,
-          top: h - sunR * 3.4,
+          top: h * horizon - sunR * 3.4,
           width: sunR * 6,
           height: sunR * 6,
           transform: [{ scale: sunScale }],
