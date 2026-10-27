@@ -54,7 +54,8 @@ function MoonStage({ size, illumination, waxing, clarity }: { size: number; illu
   const blur = Math.round(fog * 30 + (cover > 0.6 ? (cover - 0.6) * 30 : 0));
 
   return (
-    <View style={{ width: box, height: box, alignItems: 'center', justifyContent: 'center' }}>
+    // The halo and clouds spill past the moon; only the moon itself takes up layout space.
+    <View style={{ width: box, height: box, margin: -(box - size) / 2, alignItems: 'center', justifyContent: 'center' }}>
       {/* Moonlight spreading through fog or thin cloud. */}
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: haloOpacity }]} pointerEvents="none">
         <Svg width={box} height={box}>
@@ -84,7 +85,7 @@ export default function MoonScene() {
   const { width, height } = useWindowDimensions();
   const weather = useNightWeather(r?.city);
   const [heroH, setHeroH] = useState(0);
-  const moonSize = heroH ? Math.max(140, Math.min(250, heroH / 1.9)) : 0;
+  const moonSize = heroH ? Math.max(160, Math.min(340, heroH - 24, width * 0.8)) : 0;
 
   // Days away from tonight; `settled` trails it so the heavier rise/set
   // search only runs once the finger pauses.
