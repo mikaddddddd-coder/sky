@@ -1,10 +1,10 @@
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef } from 'react';
-import { Animated, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CloseButton } from '../components/CloseButton';
+import { CloseButton, useCloseButtonClearance } from '../components/CloseButton';
 import { GlowSky } from '../components/GlowSky';
 import { easeOut, Rise, useCountUp } from '../components/Motion';
 import { colors, spacing, type } from '../constants/theme';
@@ -38,11 +38,15 @@ export default function GlowScene() {
   const { t, lang } = useSettings();
   const g = r?.glow;
   const shown = useCountUp(g?.score ?? 0, 1000, 300);
+  const clearance = useCloseButtonClearance();
+  const { height } = useWindowDimensions();
+  // The sun sits on the sheet's top edge, wherever the sheet ends up.
+  const [sheetTop, setSheetTop] = useState(height * 0.5);
 
   return (
     <View style={styles.fill}>
       <GlowSky
-        horizon={0.5}
+        horizon={Math.min(0.8, (sheetTop + 20) / height)}
         weather={
           g
             ? {
@@ -75,11 +79,11 @@ export default function GlowScene() {
         </SafeAreaView>
       </View>
 
-      <View style={styles.sheet}>
+      <View style={styles.sheet} onLayout={(e) => setSheetTop(e.nativeEvent.layout.y)}>
         <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
         <View style={[StyleSheet.absoluteFill, styles.sheetTint]} />
         {r && g && (
-          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: clearance }]} showsVerticalScrollIndicator={false}>
             <Rise delay={250}>
               <Text style={styles.headline}>{t('glowDetailTitle', { pct: g.score })}</Text>
             </Rise>
@@ -111,15 +115,16 @@ const textShadow = { textShadowColor: 'rgba(60,20,50,0.35)', textShadowOffset: {
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: SHEET },
-  sky: { flex: 0.46, minHeight: 230 },
+  sky: { flex: 1, minHeight: 230 },
   skyText: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   eyebrow: { ...type.body, fontWeight: '500', color: colors.text, ...textShadow },
   figureRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: spacing.xs },
   figure: { fontSize: 76, lineHeight: 82, fontWeight: '200', letterSpacing: -3, color: '#FFFFFF', fontVariant: ['tabular-nums'], ...textShadow },
   unit: { fontSize: 24, fontWeight: '300', color: '#FFFFFF', marginTop: 12, marginLeft: 2, ...textShadow },
   caption: { ...type.caption, fontWeight: '500', color: colors.text, ...textShadow },
+  // Sized to its content, so the close button always has room below the text.
   sheet: {
-    flex: 0.54,
+    maxHeight: '62%',
     marginTop: -28,
     overflow: 'hidden',
     borderTopLeftRadius: 28,
@@ -128,7 +133,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.22)',
   },
   sheetTint: { backgroundColor: 'rgba(40,20,48,0.32)' },
-  content: { padding: spacing.lg, paddingBottom: 110, gap: spacing.sm },
+  scroll: { flexGrow: 0 },
+  content: { padding: spacing.lg, gap: spacing.sm },
   headline: { fontSize: 24, fontWeight: '600', letterSpacing: -0.4, color: colors.text },
   reasons: { gap: spacing.sm, marginVertical: spacing.sm },
   reason: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

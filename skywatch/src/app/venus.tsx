@@ -2,7 +2,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CloseButton } from '../components/CloseButton';
+import { CloseButton, useCloseButtonClearance } from '../components/CloseButton';
 import { Rise } from '../components/Motion';
 import { VenusSky } from '../components/VenusSky';
 import { colors, spacing, type } from '../constants/theme';
@@ -30,6 +30,7 @@ export default function VenusScene() {
   const { t, lang } = useSettings();
   const v = r?.sky.venus;
   const morning = v?.visibility === 'morning';
+  const clearance = useCloseButtonClearance();
 
   return (
     <View style={styles.fill}>
@@ -54,7 +55,7 @@ export default function VenusScene() {
 
       <View style={styles.sheet}>
         {r && v && (
-          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: clearance }]} showsVerticalScrollIndicator={false}>
             <Rise delay={250}>
               <Text style={styles.headline}>{t(`venus_highlight_${v.highlight}`)}</Text>
             </Rise>
@@ -79,12 +80,14 @@ export default function VenusScene() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1, backgroundColor: SHEET },
-  sky: { flex: 0.5, minHeight: 240, overflow: 'hidden' },
+  sky: { flex: 1, minHeight: 240, overflow: 'hidden' },
   skyText: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   eyebrow: { ...type.caption, color: 'rgba(255,255,255,0.7)' },
   title: { ...type.largeTitle, color: colors.text, marginTop: 2 },
-  sheet: { flex: 0.5, backgroundColor: SHEET },
-  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: 110, gap: spacing.md },
+  // Sized to its content, so the close button always has room below the text.
+  sheet: { maxHeight: '62%', backgroundColor: SHEET },
+  scroll: { flexGrow: 0 },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, gap: spacing.md },
   headline: { fontSize: 22, lineHeight: 30, fontWeight: '600', letterSpacing: -0.3, color: colors.text },
   grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.md },
   stat: { width: '33.33%', gap: 2 },
