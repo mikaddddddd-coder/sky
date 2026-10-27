@@ -84,7 +84,7 @@ export default function MoonScene() {
   const { width, height } = useWindowDimensions();
   const weather = useNightWeather(r?.city);
   const [heroH, setHeroH] = useState(0);
-  const moonSize = heroH ? Math.max(160, Math.min(340, heroH - 24, width * 0.8)) : 0;
+  const moonSize = heroH ? Math.max(160, Math.min(290, heroH - 40, width * 0.68)) : 0;
 
   // Days away from tonight; `settled` trails it so the heavier rise/set
   // search only runs once the finger pauses.
