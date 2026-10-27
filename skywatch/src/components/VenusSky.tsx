@@ -1,7 +1,8 @@
 // Twilight scene for Venus: a glowing point placed by its real altitude and
 // direction, a few faint stars, and a dark ridge along the horizon.
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Platform, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { Animated, Easing, Platform, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { Text } from './Text';
 import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { useSvgId } from './useSvgId';
 

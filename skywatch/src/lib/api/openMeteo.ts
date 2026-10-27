@@ -79,3 +79,44 @@ export async function fetchPointForecasts(points: { latitude: number; longitude:
     };
   });
 }
+
+export type NightWeather = {
+  time: number[]; // unix ms
+  cloud: number[];
+  cloudLow: number[];
+  cloudMid: number[];
+  cloudHigh: number[];
+  visibility: number[]; // meters
+  humidity: number[];
+  precipProbability: number[];
+};
+
+type NightResponse = {
+  hourly: {
+    time: number[];
+    cloud_cover: number[];
+    cloud_cover_low: number[];
+    cloud_cover_mid: number[];
+    cloud_cover_high: number[];
+    visibility: number[];
+    relative_humidity_2m: number[];
+    precipitation_probability: number[];
+  };
+};
+
+/** Hourly sky conditions for one place, a few days back and a week ahead, for judging the moon. */
+export async function fetchNightWeather(latitude: number, longitude: number): Promise<NightWeather> {
+  const vars = 'cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,visibility,relative_humidity_2m,precipitation_probability';
+  const url = `${FORECAST_URL}?latitude=${latitude.toFixed(3)}&longitude=${longitude.toFixed(3)}&timeformat=unixtime&past_days=3&forecast_days=8&hourly=${vars}`;
+  const h = (await getJson<NightResponse>(url)).hourly;
+  return {
+    time: h.time.map((t) => t * 1000),
+    cloud: h.cloud_cover,
+    cloudLow: h.cloud_cover_low,
+    cloudMid: h.cloud_cover_mid,
+    cloudHigh: h.cloud_cover_high,
+    visibility: h.visibility,
+    humidity: h.relative_humidity_2m,
+    precipProbability: h.precipitation_probability,
+  };
+}

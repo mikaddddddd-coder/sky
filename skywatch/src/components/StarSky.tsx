@@ -59,10 +59,15 @@ function Twinkle({ stars, w, h, period, delay }: { stars: Star[]; w: number; h: 
   );
 }
 
-export function StarSky({ drift }: { drift?: Animated.Value }) {
+/** `stars` 0–1 fades the stars, e.g. behind cloud or fog. */
+export function StarSky({ drift, stars = 1 }: { drift?: Animated.Value; stars?: number }) {
   const [size, setSize] = useState({ w: 390, h: 844 });
   const onLayout = (e: LayoutChangeEvent) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height });
   const id = useSvgId('stars');
+  const starOpacity = useRef(new Animated.Value(stars)).current;
+  useEffect(() => {
+    Animated.timing(starOpacity, { toValue: stars, duration: 1200, useNativeDriver: native }).start();
+  }, [starOpacity, stars]);
   const { w, h } = size;
   // The field is a bit wider than the screen so drifting never shows an edge.
   const fw = w * 1.2;
@@ -89,7 +94,7 @@ export function StarSky({ drift }: { drift?: Animated.Value }) {
         {/* A faint hint of the Milky Way running across the sky. */}
         <Ellipse cx={w * 0.55} cy={h * 0.32} rx={w * 0.95} ry={h * 0.09} fill={`url(#${id}-band)`} transform={`rotate(-28 ${w * 0.55} ${h * 0.32})`} />
       </Svg>
-      <Animated.View style={{ position: 'absolute', top: 0, left: -(fw - w) / 2, width: fw, height: h, transform: [{ translateX: shift }] }}>
+      <Animated.View style={{ position: 'absolute', top: 0, left: -(fw - w) / 2, width: fw, height: h, opacity: starOpacity, transform: [{ translateX: shift }] }}>
         <StarLayer stars={STILL} w={fw} h={h} />
         {TWINKLE.map((stars, i) => (
           <Twinkle key={i} stars={stars} w={fw} h={h} period={2600 + i * 900} delay={i * 700} />

@@ -2,6 +2,7 @@ import { BlurView } from 'expo-blur';
 import Tabs from 'expo-router/tabs';
 import { StyleSheet } from 'react-native';
 import { PinIcon, SlidersIcon, SunsetIcon } from '../../components/Icons';
+import { CJK_FONT } from '../../components/Text';
 import { colors } from '../../constants/theme';
 import { useSettings } from '../../lib/settings';
 
@@ -10,7 +11,7 @@ const icon =
   ({ color }: { color: unknown }) => <Icon color={typeof color === 'string' ? color : colors.textDim} size={22} />;
 
 export default function TabsLayout() {
-  const { t } = useSettings();
+  const { t, lang } = useSettings();
   return (
     <Tabs
       screenOptions={{
@@ -19,7 +20,7 @@ export default function TabsLayout() {
         tabBarBackground: () => <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />,
         tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.textDim,
-        tabBarLabelStyle: { fontSize: 10, lineHeight: 14, fontWeight: '500', letterSpacing: 0.2, paddingBottom: 2 },
+        tabBarLabelStyle: { fontFamily: lang === 'zh' ? CJK_FONT : undefined, fontSize: 10, lineHeight: 14, fontWeight: '500', letterSpacing: 0.2, paddingBottom: 2 },
       }}
     >
       <Tabs.Screen name="index" options={{ title: t('tabTonight'), tabBarIcon: icon(SunsetIcon) }} />

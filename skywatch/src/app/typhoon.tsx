@@ -1,5 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseButton } from '../components/CloseButton';
 import { CycloneIcon } from '../components/Icons';

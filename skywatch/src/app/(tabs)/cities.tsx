@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { CJK_FONT, Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Glass } from '../../components/Glass';
 import { CheckIcon, CloseIcon, LocateIcon, PlusIcon, SearchIcon } from '../../components/Icons';
@@ -126,7 +127,7 @@ export default function CitiesScreen() {
                 onChangeText={setQuery}
                 placeholder={t('citySearchPlaceholder')}
                 placeholderTextColor={colors.textDim}
-                style={styles.input}
+                style={[styles.input, lang === 'zh' && { fontFamily: CJK_FONT }]}
                 returnKeyType="search"
                 autoCorrect={false}
                 clearButtonMode="while-editing"

@@ -1,7 +1,8 @@
 import { BlurView } from 'expo-blur';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseButton } from '../components/CloseButton';
 import { GlowSky } from '../components/GlowSky';
@@ -40,7 +41,21 @@ export default function GlowScene() {
 
   return (
     <View style={styles.fill}>
-      <GlowSky horizon={0.5} />
+      <GlowSky
+        horizon={0.5}
+        weather={
+          g
+            ? {
+                high: g.inputs.localHigh,
+                mid: g.inputs.localMid,
+                low: g.inputs.localLow,
+                westLow: g.inputs.westLow,
+                score: g.score,
+                rain: g.inputs.precipProbability,
+              }
+            : undefined
+        }
+      />
       <View style={styles.sky}>
         <SafeAreaView edges={['top']} style={styles.skyText}>
           {r && g && (
