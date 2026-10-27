@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
 import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Glass } from '../../components/Glass';
@@ -87,25 +87,6 @@ function HeroCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
       ) : (
         <Text style={styles.sub}>{t('loadError')}</Text>
       )}
-    </Glass>
-  );
-}
-
-function CompactCity({ r, onPress }: { r: CityReport; onPress: () => void }) {
-  const { t, lang } = useSettings();
-  const shown = useCountUp(r.glow?.score ?? 0, 800, 300);
-  return (
-    <Glass onPress={onPress} style={styles.compact}>
-      <View style={styles.compactRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.compactCity}>{r.city.name[lang]}</Text>
-          <Text style={styles.sub}>{r.glow ? `${t('glowTitle')} · ${t(`level_${r.glow.level}`)}` : t('loadError')}</Text>
-        </View>
-        <View style={styles.figureRow}>
-          <Text style={styles.compactFigure}>{r.glow ? shown : '–'}</Text>
-          <Text style={styles.figureUnitSmall}>%</Text>
-        </View>
-      </View>
     </Glass>
   );
 }
@@ -207,69 +188,103 @@ function TyphoonRow({ r, count, onPress }: { r: CityReport; count: number; onPre
   );
 }
 
+/** Everything about one city's evening, as one page of the pager. */
+function CityPage({ r, count, onOpen }: { r: CityReport; count: number; onOpen: (path: ScenePath) => void }) {
+  return (
+    <View style={styles.stack}>
+      <Rise>
+        <HeroCard r={r} onPress={() => onOpen('/glow')} />
+      </Rise>
+      <Rise delay={70}>
+        <SunCard r={r} onPress={() => onOpen('/sun')} />
+      </Rise>
+      <Rise delay={140}>
+        <MoonCard r={r} onPress={() => onOpen('/moon')} />
+      </Rise>
+      <Rise delay={210}>
+        <VenusRow r={r} onPress={() => onOpen('/venus')} />
+      </Rise>
+      <Rise delay={280}>
+        <TyphoonRow r={r} count={count} onPress={() => onOpen('/typhoon')} />
+      </Rise>
+    </View>
+  );
+}
+
+type ScenePath = '/glow' | '/sun' | '/moon' | '/venus' | '/typhoon';
+
 export default function TonightScreen() {
   const { t, lang } = useSettings();
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const { report, loading, error, refresh } = useTonightReport();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const pager = useRef<ScrollViewInstance>(null);
+  const [index, setIndex] = useState(0);
 
   const cities = report?.cities ?? [];
-  const selected = cities.find((c) => c.city.id === selectedId) ?? cities[0];
-  const others = cities.filter((c) => c !== selected);
-  const now = new Date();
-  const phase = selected ? skyPhaseFor(now, selected.sky.sun.sunset, selected.sky.sun.civilDusk) : 'dusk';
-  const go = (path: '/glow' | '/sun' | '/moon' | '/venus' | '/typhoon') => selected && router.push({ pathname: path, params: { city: selected.city.id } });
+  const page = Math.min(index, Math.max(0, cities.length - 1));
+  const selected = cities[page];
+  const phase = selected ? skyPhaseFor(new Date(), selected.sky.sun.sunset, selected.sky.sun.civilDusk) : 'dusk';
+  const jump = (i: number) => {
+    pager.current?.scrollTo({ x: i * width, animated: true });
+    setIndex(i);
+  };
 
   return (
     <View style={styles.fill}>
       <SceneBackground scene={phase} />
       <SafeAreaView style={styles.fill} edges={['top']}>
-        <ScrollView
-          contentContainerStyle={styles.content}
-          refreshControl={<RefreshControl refreshing={loading && !!report} onRefresh={refresh} tintColor={colors.text} />}
-        >
-          <View style={styles.header}>
-            <Text style={styles.title}>{t('tonightTitle')}</Text>
-            {report && selected && (
-              <Text style={styles.sub}>{t('updatedAt', { time: formatTime(report.generatedAt, selected.city.timezone, lang) })}</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>{t('tonightTitle')}</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.sub}>
+              {report && selected ? t('updatedAt', { time: formatTime(report.generatedAt, selected.city.timezone, lang) }) : ' '}
+            </Text>
+            {cities.length > 1 && (
+              <View style={styles.dots}>
+                {cities.map((c, i) => (
+                  <Pressable key={c.city.id} onPress={() => jump(i)} hitSlop={6} accessibilityLabel={c.city.name[lang]}>
+                    <View style={[styles.dot, i === page && styles.dotOn]} />
+                  </Pressable>
+                ))}
+              </View>
             )}
           </View>
+        </View>
 
-          {!report && loading && (
-            <View style={styles.loading}>
-              <ActivityIndicator color={colors.text} />
-              <Text style={styles.sub}>{t('loading')}</Text>
-            </View>
-          )}
-          {error && <Text style={styles.sub}>{t('loadError')}</Text>}
+        {!report && loading && (
+          <View style={styles.loading}>
+            <ActivityIndicator color={colors.text} />
+            <Text style={styles.sub}>{t('loading')}</Text>
+          </View>
+        )}
+        {error && !report && <Text style={[styles.sub, styles.padded]}>{t('loadError')}</Text>}
 
-          {selected && (
-            // Keyed by city so switching cities replays the entrance.
-            <View key={selected.city.id} style={styles.stack}>
-              <Rise>
-                <HeroCard r={selected} onPress={() => go('/glow')} />
-              </Rise>
-              {others.map((c, i) => (
-                <Rise key={c.city.id} delay={70 * (i + 1)}>
-                  <CompactCity r={c} onPress={() => setSelectedId(c.city.id)} />
-                </Rise>
-              ))}
-              <Rise delay={70 * (others.length + 1)}>
-                <SunCard r={selected} onPress={() => go('/sun')} />
-              </Rise>
-              <Rise delay={70 * (others.length + 2)}>
-                <MoonCard r={selected} onPress={() => go('/moon')} />
-              </Rise>
-              <Rise delay={70 * (others.length + 3)}>
-                <VenusRow r={selected} onPress={() => go('/venus')} />
-              </Rise>
-              <Rise delay={70 * (others.length + 4)}>
-                <TyphoonRow r={selected} count={report?.activeCyclones.length ?? 0} onPress={() => go('/typhoon')} />
-              </Rise>
-            </View>
-          )}
-
-          <Text style={styles.footer}>{t('dataSource')}</Text>
+        {/* One page per followed city; swipe sideways to switch. */}
+        <ScrollView
+          ref={pager}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / width))}
+          style={styles.fill}
+        >
+          {cities.map((r) => (
+            <ScrollView
+              key={r.city.id}
+              style={{ width }}
+              contentContainerStyle={styles.content}
+              showsVerticalScrollIndicator={false}
+              refreshControl={<RefreshControl refreshing={loading && !!report} onRefresh={refresh} tintColor={colors.text} />}
+            >
+              <CityPage
+                r={r}
+                count={report?.activeCyclones.length ?? 0}
+                onOpen={(path) => router.push({ pathname: path, params: { city: r.city.id } })}
+              />
+              <Text style={styles.footer}>{t('dataSource')}</Text>
+            </ScrollView>
+          ))}
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -279,8 +294,13 @@ export default function TonightScreen() {
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   stack: { gap: spacing.md - 4 },
-  content: { padding: spacing.md, gap: spacing.md - 4, paddingBottom: 110 },
-  header: { gap: 2, marginBottom: spacing.xs, marginTop: spacing.sm },
+  content: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, gap: spacing.md - 4, paddingBottom: 110 },
+  header: { gap: 2, paddingHorizontal: spacing.md, marginBottom: spacing.sm, marginTop: spacing.sm },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  dots: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.35)' },
+  dotOn: { width: 16, backgroundColor: colors.text },
+  padded: { paddingHorizontal: spacing.md },
   title: { ...type.largeTitle, color: colors.text },
   sub: { ...type.caption, color: colors.textDim, fontVariant: ['tabular-nums'] },
   loading: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xl },
@@ -298,9 +318,6 @@ const styles = StyleSheet.create({
   figure: { fontSize: 64, lineHeight: 68, fontWeight: '200', letterSpacing: -2, color: colors.text, fontVariant: ['tabular-nums'] },
   figureUnit: { fontSize: 20, fontWeight: '300', color: colors.text, marginTop: 8, marginLeft: 2 },
   levelText: { ...type.caption, fontWeight: '500' },
-  compact: {},
-  compactRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  compactCity: { ...type.headline, fontSize: 17, color: colors.text },
   compactFigure: { fontSize: 36, lineHeight: 40, fontWeight: '200', letterSpacing: -1, color: colors.text, fontVariant: ['tabular-nums'] },
   figureUnitSmall: { fontSize: 14, fontWeight: '300', color: colors.text, marginTop: 5, marginLeft: 2 },
   split: { flexDirection: 'row', justifyContent: 'space-between' },
