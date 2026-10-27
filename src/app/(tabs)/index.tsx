@@ -2,7 +2,7 @@ import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View }
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CityTonight } from '../../components/CityTonight';
 import { SkyBackground, skyPhaseFor } from '../../components/SkyBackground';
-import { colors, spacing } from '../../constants/theme';
+import { colors, spacing, type } from '../../constants/theme';
 import { formatTime } from '../../lib/format';
 import { useSettings } from '../../lib/settings';
 import { useTonightReport } from '../../lib/useTonightReport';
@@ -50,8 +50,8 @@ export default function TonightScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl },
-  title: { color: colors.text, fontSize: 34, fontWeight: '800', marginTop: spacing.sm },
-  dim: { color: colors.textDim, fontSize: 13 },
+  title: { ...type.largeTitle, color: colors.text, marginTop: spacing.sm },
+  dim: { ...type.caption, color: colors.textDim },
   center: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xl },
   error: { color: colors.bad },
   footer: { color: colors.textDim, fontSize: 11, textAlign: 'center', marginTop: spacing.md },

@@ -26,3 +26,14 @@ export const colors = {
 
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 };
 export const radius = { md: 16, lg: 24 };
+
+// One quiet type scale: system face, few weights, tabular digits for numbers.
+export const type = {
+  largeTitle: { fontSize: 30, fontWeight: '600', letterSpacing: -0.5 },
+  title: { fontSize: 20, fontWeight: '600', letterSpacing: -0.2 },
+  headline: { fontSize: 15, fontWeight: '600' },
+  body: { fontSize: 14, fontWeight: '400', lineHeight: 20 },
+  caption: { fontSize: 12, fontWeight: '400', lineHeight: 17 },
+  label: { fontSize: 11, fontWeight: '500', letterSpacing: 0.6, textTransform: 'uppercase' },
+  figure: { fontSize: 44, fontWeight: '200', letterSpacing: -1, fontVariant: ['tabular-nums'] },
+} as const;

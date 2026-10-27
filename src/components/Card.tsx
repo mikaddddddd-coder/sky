@@ -23,6 +23,6 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.sm,
   },
-  badge: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 2, alignSelf: 'flex-start' },
-  badgeText: { fontSize: 12, fontWeight: '600' },
+  badge: { borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 2, alignSelf: 'flex-start' },
+  badgeText: { fontSize: 11, fontWeight: '500', letterSpacing: 0.3 },
 });

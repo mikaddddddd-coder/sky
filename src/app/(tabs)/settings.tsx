@@ -2,7 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../components/Card';
 import { SkyBackground } from '../../components/SkyBackground';
-import { colors, radius, spacing } from '../../constants/theme';
+import { colors, radius, spacing, type } from '../../constants/theme';
 import type { StringKey } from '../../lib/i18n/strings';
 import { useSettings, type Settings } from '../../lib/settings';
 
@@ -65,14 +65,14 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: spacing.md, gap: spacing.sm },
-  title: { color: colors.text, fontSize: 28, fontWeight: '800', marginVertical: spacing.sm },
-  section: { color: colors.textDim, fontSize: 13, marginTop: spacing.md, textTransform: 'uppercase' },
+  title: { ...type.largeTitle, color: colors.text, marginVertical: spacing.sm },
+  section: { ...type.label, color: colors.textDim, marginTop: spacing.md },
   segment: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: radius.md, padding: 4 },
   seg: { flex: 1, paddingVertical: spacing.sm, borderRadius: radius.md - 4, alignItems: 'center' },
   segOn: { backgroundColor: colors.glow },
-  segText: { color: colors.textDim, fontWeight: '600' },
+  segText: { ...type.body, fontWeight: '500', color: colors.textDim },
   segTextOn: { color: '#1A0E1F' },
   alertRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs },
-  alertTitle: { color: colors.text, fontSize: 16, fontWeight: '600' },
-  alertDesc: { color: colors.textDim, fontSize: 12 },
+  alertTitle: { ...type.headline, color: colors.text },
+  alertDesc: { ...type.caption, color: colors.textDim },
 });

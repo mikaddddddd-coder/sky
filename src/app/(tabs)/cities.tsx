@@ -2,7 +2,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SkyBackground } from '../../components/SkyBackground';
 import { CITIES } from '../../constants/cities';
-import { colors, radius, spacing } from '../../constants/theme';
+import { CheckIcon } from '../../components/Icons';
+import { colors, radius, spacing, type } from '../../constants/theme';
 import { useSettings } from '../../lib/settings';
 
 export default function CitiesScreen() {
@@ -27,7 +28,7 @@ export default function CitiesScreen() {
                   <Text style={styles.name}>{c.name[lang]}</Text>
                   <Text style={styles.sub}>{c.name[lang === 'zh' ? 'en' : 'zh']}</Text>
                 </View>
-                <Text style={styles.check}>{on ? '✓' : ''}</Text>
+                {on && <CheckIcon color={colors.glow} size={20} />}
               </Pressable>
             );
           })}
@@ -40,7 +41,7 @@ export default function CitiesScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: spacing.md, gap: spacing.sm },
-  title: { color: colors.text, fontSize: 28, fontWeight: '800', marginVertical: spacing.sm },
+  title: { ...type.largeTitle, color: colors.text, marginVertical: spacing.sm },
   item: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -52,7 +53,6 @@ const styles = StyleSheet.create({
     borderColor: colors.cardBorder,
   },
   itemOn: { borderColor: colors.glow },
-  name: { color: colors.text, fontSize: 18, fontWeight: '600' },
-  sub: { color: colors.textDim, fontSize: 12 },
-  check: { color: colors.glow, fontSize: 20, fontWeight: '700' },
+  name: { ...type.headline, fontSize: 17, color: colors.text },
+  sub: { ...type.caption, color: colors.textDim },
 });
