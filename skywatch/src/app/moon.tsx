@@ -31,14 +31,13 @@ const CLOUD_BAND: [number, number] = [0.05, 0.6];
 const FRONT_BAND: [number, number] = [0.15, 0.75];
 const FRONT_THICKNESS: [number, number] = [0.16, 0.34];
 
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.stat}>
       <Text style={styles.statLabel}>{label}</Text>
       <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Text>
-      {!!sub && <Text style={styles.statSub}>{sub}</Text>}
     </View>
   );
 }
@@ -212,14 +211,10 @@ export default function MoonScene() {
           <Stat label={t('moonrise_label')} value={time(fullMoon.moonrise)} />
           <Stat label={t('moonset_label')} value={time(fullMoon.moonset)} />
           <Stat label={t('moonLit')} value={`${Math.round(look.illumination * 100)}%`} />
-          <Stat
-            label={t('moonClarity')}
-            value={clarity ? t(`clarity_${clarity.level}`) : '—'}
-            sub={clarity ? `${clarity.score}` : undefined}
-          />
+          <Stat label={t('moonClarity')} value={clarity ? t(`clarity_${clarity.level}`) : '—'} />
         </Rise>
         <Text style={styles.footnote}>
-          {clarity ? t('moonViewAround', { time: time(clarity.at) }) : weather ? t('moonNoForecast') : ' '}
+          {clarity ? `${t('moonViewAround', { time: time(clarity.at) })} · ${t('moonClarity')} ${clarity.score}` : weather ? t('moonNoForecast') : ' '}
         </Text>
 
         <Rise delay={900} style={styles.strip}>
@@ -262,31 +257,30 @@ const styles = StyleSheet.create({
   pill: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 13, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(243,214,107,0.6)' },
   pillText: { fontSize: 13, fontWeight: '600', color: colors.moonTime },
   hero: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  titleBlock: { alignItems: 'center', paddingHorizontal: spacing.xl, gap: 10 },
-  phase: { fontSize: 40, lineHeight: 46, fontWeight: '300', letterSpacing: 0.5, color: '#FFFFFF' },
+  titleBlock: { alignItems: 'center', paddingHorizontal: spacing.xl, gap: 4 },
+  phase: { fontSize: 34, lineHeight: 40, fontWeight: '300', letterSpacing: 0.5, color: '#FFFFFF' },
   phaseZh: { letterSpacing: 8, marginLeft: 8 },
-  verdict: { fontSize: 15, lineHeight: 24, color: 'rgba(255,255,255,0.78)', textAlign: 'center' },
+  verdict: { fontSize: 14, lineHeight: 20, color: 'rgba(255,255,255,0.78)', textAlign: 'center' },
   stale: { opacity: 0.45 },
   stats: {
     flexDirection: 'row',
-    marginTop: spacing.xl,
+    marginTop: spacing.md,
     marginHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,255,255,0.16)',
   },
-  stat: { flex: 1, alignItems: 'center', gap: 6 },
+  stat: { flex: 1, alignItems: 'center', gap: 3 },
   statLabel: { fontSize: 11, fontWeight: '500', letterSpacing: 1.2, color: 'rgba(255,255,255,0.5)' },
-  statValue: { fontSize: 22, fontWeight: '300', color: '#FFFFFF', fontVariant: ['tabular-nums'] },
-  statSub: { ...type.caption, fontSize: 11, color: 'rgba(255,255,255,0.45)', fontVariant: ['tabular-nums'], marginTop: -4 },
-  footnote: { ...type.caption, color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginTop: spacing.sm },
-  strip: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.lg, marginTop: spacing.lg },
-  day: { width: 40, alignItems: 'center', gap: 5, paddingVertical: 7, borderRadius: 14 },
+  statValue: { fontSize: 20, fontWeight: '300', color: '#FFFFFF', fontVariant: ['tabular-nums'] },
+  footnote: { ...type.caption, fontSize: 11, color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginTop: 6 },
+  strip: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.lg, marginTop: spacing.sm },
+  day: { width: 40, alignItems: 'center', gap: 3, paddingVertical: 5, borderRadius: 12 },
   dayOn: { backgroundColor: 'rgba(255,255,255,0.1)' },
   dayNum: { ...type.caption, fontSize: 11, color: colors.textDim, fontVariant: ['tabular-nums'] },
   dayNumOn: { color: colors.text, fontWeight: '600' },
-  under: { height: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 92 },
+  under: { height: 30, alignItems: 'center', justifyContent: 'center', marginBottom: 84 },
   today: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.12)' },
   todayText: { ...type.caption, fontWeight: '600', color: colors.text },
   moonBlur: { position: 'absolute' },
