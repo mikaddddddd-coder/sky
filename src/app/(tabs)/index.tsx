@@ -153,11 +153,11 @@ function MoonCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
   );
 }
 
-function VenusRow({ r }: { r: CityReport }) {
+function VenusRow({ r, onPress }: { r: CityReport; onPress: () => void }) {
   const { t } = useSettings();
   const v = r.sky.venus;
   return (
-    <Glass>
+    <Glass onPress={onPress}>
       <View style={styles.listRow}>
         <SparkleIcon color={colors.venus} size={20} />
         <View style={{ flex: 1 }}>
@@ -165,6 +165,7 @@ function VenusRow({ r }: { r: CityReport }) {
           <Text style={styles.sub}>{t(`venus_highlight_${v.highlight}`)}</Text>
         </View>
         <Text style={[styles.levelText, { color: LEVEL_COLOR[v.level] }]}>{t(`level_${v.level}`)}</Text>
+        <ChevronRightIcon color={colors.textDim} size={18} />
       </View>
       {r.sky.conjunction && (
         <View style={styles.listRow}>
@@ -180,7 +181,7 @@ function TyphoonRow({ r, count, onPress }: { r: CityReport; count: number; onPre
   const { t, lang } = useSettings();
   const ty = r.typhoon;
   return (
-    <Glass onPress={ty ? onPress : undefined}>
+    <Glass onPress={onPress}>
       <View style={styles.listRow}>
         <CycloneIcon color={ty ? colors.typhoon : colors.text} size={20} />
         <View style={{ flex: 1 }}>
@@ -199,7 +200,7 @@ function TyphoonRow({ r, count, onPress }: { r: CityReport; count: number; onPre
             <Text style={styles.figureUnitSmall}>km</Text>
           </View>
         )}
-        {ty && <ChevronRightIcon color={colors.textDim} size={18} />}
+        <ChevronRightIcon color={colors.textDim} size={18} />
       </View>
     </Glass>
   );
@@ -216,7 +217,7 @@ export default function TonightScreen() {
   const others = cities.filter((c) => c !== selected);
   const now = new Date();
   const phase = selected ? skyPhaseFor(now, selected.sky.sun.sunset, selected.sky.sun.civilDusk) : 'dusk';
-  const go = (path: '/glow' | '/moon' | '/typhoon') => selected && router.push({ pathname: path, params: { city: selected.city.id } });
+  const go = (path: '/glow' | '/moon' | '/venus' | '/typhoon') => selected && router.push({ pathname: path, params: { city: selected.city.id } });
 
   return (
     <View style={styles.fill}>
@@ -259,7 +260,7 @@ export default function TonightScreen() {
                 <MoonCard r={selected} onPress={() => go('/moon')} />
               </Rise>
               <Rise delay={70 * (others.length + 3)}>
-                <VenusRow r={selected} />
+                <VenusRow r={selected} onPress={() => go('/venus')} />
               </Rise>
               <Rise delay={70 * (others.length + 4)}>
                 <TyphoonRow r={selected} count={report?.activeCyclones.length ?? 0} onPress={() => go('/typhoon')} />

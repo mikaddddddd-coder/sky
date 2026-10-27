@@ -14,7 +14,10 @@ export type CityReport = {
   city: City;
   sky: EveningSky;
   glow: GlowForecast | null;
+  /** Nearest cyclone within alert range, if any. */
   typhoon: { cyclone: Cyclone; km: number } | null;
+  /** Nearest active West Pacific cyclone at any distance. */
+  nearestCyclone: { cyclone: Cyclone; km: number } | null;
   error?: string;
 };
 
@@ -56,8 +59,9 @@ export async function buildTonightReport(cities: City[], now = new Date()): Prom
     const sky = skies[i];
     const near = nearestCyclone(cyclones, city.latitude, city.longitude);
     const typhoon = near && near.km <= TYPHOON_ALERT_KM ? near : null;
-    if (forecasts instanceof Error) return { city, sky, glow: null, typhoon, error: forecasts.message };
-    return { city, sky, glow: glowFromForecasts(forecasts[i * 2], forecasts[i * 2 + 1], sky.sun.sunset), typhoon };
+    const base = { city, sky, typhoon, nearestCyclone: near };
+    if (forecasts instanceof Error) return { ...base, glow: null, error: forecasts.message };
+    return { ...base, glow: glowFromForecasts(forecasts[i * 2], forecasts[i * 2 + 1], sky.sun.sunset) };
   });
 
   return { generatedAt: now, cities: reports, activeCyclones: cyclones };

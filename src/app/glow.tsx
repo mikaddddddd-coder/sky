@@ -3,14 +3,15 @@ import { useEffect, useRef } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseButton } from '../components/CloseButton';
-import { Glass } from '../components/Glass';
+import { GlowSky } from '../components/GlowSky';
 import { easeOut, Rise, useCountUp } from '../components/Motion';
-import { SceneBackground } from '../components/SceneBackground';
 import { colors, spacing, type } from '../constants/theme';
+import { formatTime } from '../lib/format';
 import { useCityReport } from '../lib/report';
 import { useSettings } from '../lib/settings';
 
 const POSITIVE = new Set(['canvas', 'clearWest', 'afterRain', 'clean']);
+const SHEET = '#1A1322';
 
 function Bar({ label, value, delay }: { label: string; value: number; delay: number }) {
   const grow = useRef(new Animated.Value(0)).current;
@@ -34,60 +35,91 @@ export default function GlowScene() {
   const r = useCityReport(city);
   const { t, lang } = useSettings();
   const g = r?.glow;
-  const shown = useCountUp(g?.score ?? 0, 900, 250);
+  const shown = useCountUp(g?.score ?? 0, 1000, 300);
 
   return (
     <View style={styles.fill}>
-      <SceneBackground scene="glow" fadeIn />
-      <SafeAreaView style={styles.fill}>
-        {r && g && (
-          <ScrollView contentContainerStyle={styles.content}>
-            <Rise distance={24} duration={700}>
-            <Glass style={styles.panel}>
-              <Text style={styles.eyebrow}>{t('glowDetailLead', { city: r.city.name[lang] })}</Text>
-              <Text style={styles.headline}>{t('glowDetailTitle', { pct: shown })}</Text>
-
-              <View style={styles.reasons}>
-                {g.reasons.map((reason, i) => (
-                  <Rise key={reason} delay={350 + i * 90} style={styles.reason}>
-                    <View style={[styles.dot, { backgroundColor: POSITIVE.has(reason) ? colors.good : colors.bad }]} />
-                    <Text style={styles.reasonText}>{t(`glow_reason_${reason}`)}</Text>
-                  </Rise>
-                ))}
+      <View style={styles.sky}>
+        <GlowSky />
+        <SafeAreaView edges={['top']} style={styles.skyText}>
+          {r && g && (
+            <Rise delay={150}>
+              <Text style={styles.eyebrow}>
+                {r.city.name[lang]} · {t('sunset')} {formatTime(r.sky.sun.sunset, r.city.timezone, lang)}
+              </Text>
+              <View style={styles.figureRow}>
+                <Text style={styles.figure}>{shown}</Text>
+                <Text style={styles.unit}>%</Text>
               </View>
-
-              <Text style={styles.section}>{t('glowCloudLayers')}</Text>
-              <Bar label={t('glowLayerHigh')} value={g.inputs.localHigh} delay={500} />
-              <Bar label={t('glowLayerMid')} value={g.inputs.localMid} delay={580} />
-              <Bar label={t('glowLayerLow')} value={g.inputs.localLow} delay={660} />
-              <Bar label={t('glowWestLow')} value={g.inputs.westLow} delay={740} />
-
-              <Text style={styles.method}>{t('glowMethod')}</Text>
-            </Glass>
+              <Text style={styles.caption}>
+                {t('glowTitle')} · {t(`level_${g.level}`)}
+              </Text>
             </Rise>
+          )}
+        </SafeAreaView>
+      </View>
+
+      <View style={styles.sheet}>
+        {r && g && (
+          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            <Rise delay={250}>
+              <Text style={styles.headline}>{t('glowDetailTitle', { pct: g.score })}</Text>
+            </Rise>
+            <View style={styles.reasons}>
+              {g.reasons.map((reason, i) => (
+                <Rise key={reason} delay={350 + i * 90} style={styles.reason}>
+                  <View style={[styles.dot, { backgroundColor: POSITIVE.has(reason) ? colors.good : colors.bad }]} />
+                  <Text style={styles.reasonText}>{t(`glow_reason_${reason}`)}</Text>
+                </Rise>
+              ))}
+            </View>
+
+            <Text style={styles.section}>{t('glowCloudLayers')}</Text>
+            <Bar label={t('glowLayerHigh')} value={g.inputs.localHigh} delay={500} />
+            <Bar label={t('glowLayerMid')} value={g.inputs.localMid} delay={580} />
+            <Bar label={t('glowLayerLow')} value={g.inputs.localLow} delay={660} />
+            <Bar label={t('glowWestLow')} value={g.inputs.westLow} delay={740} />
+
+            <Text style={styles.method}>{t('glowMethod')}</Text>
           </ScrollView>
         )}
-      </SafeAreaView>
+      </View>
       <CloseButton />
     </View>
   );
 }
 
+const textShadow = { textShadowColor: 'rgba(60,20,50,0.35)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 };
+
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  content: { padding: spacing.lg, paddingTop: spacing.xl, paddingBottom: 120 },
-  panel: {},
-  eyebrow: { ...type.caption, color: 'rgba(255,255,255,0.8)' },
-  headline: { fontSize: 32, fontWeight: '600', letterSpacing: -0.6, color: colors.text, marginBottom: spacing.sm },
-  reasons: { gap: spacing.sm, marginBottom: spacing.md },
+  fill: { flex: 1, backgroundColor: SHEET },
+  sky: { flex: 0.46, minHeight: 230, overflow: 'hidden' },
+  skyText: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+  eyebrow: { ...type.body, fontWeight: '500', color: colors.text, ...textShadow },
+  figureRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: spacing.xs },
+  figure: { fontSize: 76, lineHeight: 82, fontWeight: '200', letterSpacing: -3, color: '#FFFFFF', fontVariant: ['tabular-nums'], ...textShadow },
+  unit: { fontSize: 24, fontWeight: '300', color: '#FFFFFF', marginTop: 12, marginLeft: 2, ...textShadow },
+  caption: { ...type.caption, fontWeight: '500', color: colors.text, ...textShadow },
+  sheet: {
+    flex: 0.54,
+    marginTop: -28,
+    backgroundColor: SHEET,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  content: { padding: spacing.lg, paddingBottom: 110, gap: spacing.sm },
+  headline: { fontSize: 24, fontWeight: '600', letterSpacing: -0.4, color: colors.text },
+  reasons: { gap: spacing.sm, marginVertical: spacing.sm },
   reason: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  reasonText: { ...type.body, fontSize: 16, color: colors.text, flex: 1 },
-  section: { ...type.label, color: 'rgba(255,255,255,0.75)', marginTop: spacing.sm },
+  dot: { width: 7, height: 7, borderRadius: 4 },
+  reasonText: { ...type.body, fontSize: 15, color: colors.text, flex: 1 },
+  section: { ...type.label, color: colors.textDim, marginTop: spacing.sm },
   barRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   barLabel: { ...type.caption, color: colors.text, width: 92 },
-  barTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.22)', overflow: 'hidden' },
-  barFill: { height: 6, borderRadius: 3, backgroundColor: colors.text },
+  barTrack: { flex: 1, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.12)', overflow: 'hidden' },
+  barFill: { height: 5, borderRadius: 3, backgroundColor: '#F7A98F' },
   barValue: { ...type.caption, color: colors.text, width: 38, textAlign: 'right', fontVariant: ['tabular-nums'] },
-  method: { ...type.caption, color: 'rgba(255,255,255,0.75)', marginTop: spacing.md },
+  method: { ...type.caption, color: colors.textDim, marginTop: spacing.md },
 });

@@ -56,11 +56,17 @@ export type MoonInfo = {
 };
 
 export type VenusInfo = {
+  /** Best moment to look: civil dusk for an evening star, civil dawn for a morning star. */
+  bestTime: Date;
+  altitudeAtBest: number;
+  azimuthAtBest: number;
+  /** Lit fraction of the disc; Venus shows phases like the Moon through binoculars. */
+  phaseFraction: number;
   altitudeAtDusk: number;
   elongation: number;
   magnitude: number;
   visibility: 'evening' | 'morning';
-  highlight: 'good' | 'low' | 'morning';
+  highlight: 'good' | 'low' | 'morning' | 'nearSun';
   score: number;
   level: Level;
 };
@@ -90,7 +96,7 @@ export function computeEveningSky(lat: number, lon: number, date: Date, tzOffset
   const sunrise = SearchRiseSet(Body.Sun, obs, +1, new Date(noon.getTime() - 12 * 3600_000), 1)?.date ?? new Date(noon.getTime() - 6 * 3600_000);
   const sun: SunTimes = { sunrise, sunset, civilDusk, sunsetAzimuth: altAz(Body.Sun, sunset, obs).azimuth };
 
-  return { sun, moon: moonInfo(obs, noon, sunset), venus: venusInfo(obs, civilDusk), conjunction: conjunction(civilDusk) };
+  return { sun, moon: moonInfo(obs, noon, sunset), venus: venusInfo(obs, civilDusk, sunset), conjunction: conjunction(civilDusk) };
 }
 
 function moonInfo(obs: Observer, noon: Date, sunset: Date): MoonInfo {
@@ -134,15 +140,23 @@ function moonInfo(obs: Observer, noon: Date, sunset: Date): MoonInfo {
   };
 }
 
-function venusInfo(obs: Observer, civilDusk: Date): VenusInfo {
+function venusInfo(obs: Observer, civilDusk: Date, sunset: Date): VenusInfo {
   const elong = Elongation(Body.Venus, civilDusk);
   const altitudeAtDusk = altAz(Body.Venus, civilDusk, obs).altitude;
-  const magnitude = Illumination(Body.Venus, civilDusk).mag;
+  const illum = Illumination(Body.Venus, civilDusk);
+  const magnitude = illum.mag;
   const visibility = elong.visibility === 'evening' ? 'evening' : 'morning';
+  const civilDawn = SearchAltitude(Body.Sun, obs, +1, sunset, 1, -6)?.date ?? new Date(sunset.getTime() + 12 * 3600_000);
+  const bestTime = visibility === 'evening' ? civilDusk : civilDawn;
+  const best = altAz(Body.Venus, bestTime, obs);
 
   let highlight: VenusInfo['highlight'];
   let score: number;
-  if (visibility === 'morning') {
+  if (elong.elongation < 10) {
+    // Lost in the Sun's glare around conjunction, whichever side it is on.
+    highlight = 'nearSun';
+    score = 0;
+  } else if (visibility === 'morning') {
     highlight = 'morning';
     score = 0;
   } else if (altitudeAtDusk > 8 && elong.elongation > 15) {
@@ -153,7 +167,19 @@ function venusInfo(obs: Observer, civilDusk: Date): VenusInfo {
     score = Math.max(0, altitudeAtDusk * 3);
   }
   score = Math.round(score);
-  return { altitudeAtDusk, elongation: elong.elongation, magnitude, visibility, highlight, score, level: levelFromScore(score) };
+  return {
+    bestTime,
+    altitudeAtBest: best.altitude,
+    azimuthAtBest: best.azimuth,
+    phaseFraction: illum.phase_fraction,
+    altitudeAtDusk,
+    elongation: elong.elongation,
+    magnitude,
+    visibility,
+    highlight,
+    score,
+    level: levelFromScore(score),
+  };
 }
 
 function conjunction(t: Date): ConjunctionInfo {

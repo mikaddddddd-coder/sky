@@ -13,36 +13,54 @@ export default function TyphoonScene() {
   const { city } = useLocalSearchParams<{ city?: string }>();
   const r = useCityReport(city);
   const { t, lang } = useSettings();
-  const ty = r?.typhoon;
-  const km = useCountUp(ty ? Math.round(ty.km) : 0, 1100, 450);
-  const level = ty?.cyclone.alertLevel;
+  // A cyclone inside the alert radius is the story; otherwise show the calm state
+  // and, if there is one, the nearest cyclone further out.
+  const near = r?.typhoon ?? null;
+  const shown = near ?? r?.nearestCyclone ?? null;
+  const km = useCountUp(shown ? Math.round(shown.km) : 0, 1100, 450);
+  const level = near?.cyclone.alertLevel;
   const levelLabel = level === 'green' || level === 'orange' || level === 'red' ? t(`alert_${level}`) : level;
+  const cityName = r?.city.name[lang] ?? '';
 
   return (
     <View style={styles.fill}>
       <SceneBackground scene="typhoon" fadeIn />
       <SafeAreaView style={[styles.fill, styles.content]}>
-        {r && ty && (
+        {r && (
           <>
             <Rise style={styles.top}>
               <View style={styles.badge}>
                 <CycloneIcon color="#2F5FA8" size={30} />
               </View>
-              <Text style={styles.meta}>
-                {t('typhoonAlert', { level: levelLabel ?? '' })}
-              </Text>
-              {!!ty.cyclone.fromDate && <Text style={styles.meta}>{ty.cyclone.fromDate.slice(0, 10)}</Text>}
+              {near ? (
+                <>
+                  <Text style={styles.meta}>{t('typhoonAlert', { level: levelLabel ?? '' })}</Text>
+                  {!!near.cyclone.fromDate && <Text style={styles.meta}>{near.cyclone.fromDate.slice(0, 10)}</Text>}
+                </>
+              ) : (
+                <Text style={styles.meta}>{t('typhoonCalmBody', { city: cityName })}</Text>
+              )}
             </Rise>
 
             <Rise delay={250} distance={24} style={styles.bottom}>
               <Text style={styles.eyebrow}>{t('typhoonEyebrow')}</Text>
-              <Text style={styles.headline}>{t('typhoonHeadline', { name: ty.cyclone.name, city: r.city.name[lang] })}</Text>
+              <Text style={styles.headline}>
+                {near ? t('typhoonHeadline', { name: near.cyclone.name, city: cityName }) : t('typhoonCalmTitle')}
+              </Text>
               <View style={styles.rule} />
-              <View style={styles.figureRow}>
-                <Text style={styles.figure}>{km}</Text>
-                <Text style={styles.unit}>km</Text>
-              </View>
-              <Text style={styles.eyebrow}>{t('typhoonDistance')}</Text>
+              {shown ? (
+                <>
+                  <View style={styles.figureRow}>
+                    <Text style={styles.figure}>{km}</Text>
+                    <Text style={styles.unit}>km</Text>
+                  </View>
+                  <Text style={styles.eyebrow}>
+                    {near ? t('typhoonDistance') : t('typhoonNearestFar', { name: shown.cyclone.name, km: Math.round(shown.km) })}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.eyebrow}>{t('typhoonNoneActive')}</Text>
+              )}
             </Rise>
           </>
         )}
