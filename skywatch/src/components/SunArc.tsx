@@ -13,11 +13,11 @@ import { useSvgId } from './useSvgId';
 // fraction of the day.
 const NIGHT = 0.1;
 
-export function SunArc({ sunrise, sunset, now }: { sunrise: Date; sunset: Date; now: Date }) {
+export function SunArc({ sunrise, sunset, now, height = 116 }: { sunrise: Date; sunset: Date; now: Date; height?: number }) {
   const [w, setW] = useState(300);
   const travel = useProgress(1400, 300);
   const id = useSvgId('sunarc');
-  const h = 116;
+  const h = height;
   const pad = 6;
   const base = h - 26;
   const amp = base - 14;

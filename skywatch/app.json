@@ -31,6 +31,12 @@
       [
         "expo-notifications",
         {}
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "SkyWatch uses your location to work out sunset times and tonight's sky where you are."
+        }
       ]
     ],
     "scheme": "skywatch",

@@ -1,18 +1,21 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLocales } from 'expo-localization';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { DEFAULT_CITY_IDS } from '../constants/cities';
+import { DEFAULT_CITY_IDS, type City } from '../constants/cities';
 import { translate, type Lang, type StringKey } from './i18n/strings';
 
 export type Settings = {
   language: 'system' | Lang;
   cityIds: string[];
+  /** Cities added by search or from the device location, kept so they survive restarts. */
+  customCities: City[];
   alerts: { glow: boolean; sky: boolean; typhoon: boolean };
 };
 
 const DEFAULTS: Settings = {
   language: 'system',
   cityIds: DEFAULT_CITY_IDS,
+  customCities: [],
   alerts: { glow: true, sky: true, typhoon: true },
 };
 

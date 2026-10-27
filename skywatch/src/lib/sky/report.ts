@@ -27,7 +27,7 @@ export type TonightReport = {
   activeCyclones: Cyclone[];
 };
 
-function tzOffsetMinutes(timezone: string, at: Date) {
+export function tzOffsetMinutes(timezone: string, at: Date) {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
     hourCycle: 'h23',

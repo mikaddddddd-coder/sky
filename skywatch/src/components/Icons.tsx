@@ -135,3 +135,30 @@ export function CloseIcon(p: IconProps) {
     </Frame>
   );
 }
+
+export function LocateIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Circle cx={12} cy={12} r={6.5} />
+      <Circle cx={12} cy={12} r={2} />
+      <Path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3" />
+    </Frame>
+  );
+}
+
+export function SearchIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Circle cx={10.5} cy={10.5} r={6} />
+      <Path d="M15 15l5 5" />
+    </Frame>
+  );
+}
+
+export function PlusIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Path d="M12 5.5v13M5.5 12h13" />
+    </Frame>
+  );
+}

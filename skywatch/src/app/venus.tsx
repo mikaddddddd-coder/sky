@@ -5,13 +5,11 @@ import { CloseButton } from '../components/CloseButton';
 import { Rise } from '../components/Motion';
 import { VenusSky } from '../components/VenusSky';
 import { colors, spacing, type } from '../constants/theme';
-import { formatTime } from '../lib/format';
+import { dirKey, formatTime } from '../lib/format';
 import type { StringKey } from '../lib/i18n/strings';
 import { useCityReport } from '../lib/report';
 import { useSettings } from '../lib/settings';
 
-const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const;
-const dirKey = (az: number) => `dir_${DIRS[Math.round((((az % 360) + 360) % 360) / 45) % 8]}` as StringKey;
 const SHEET = '#0B0A18';
 // Typographic minus so negative altitudes don't read as a hyphen.
 const signed = (n: number) => `${Math.round(n)}`.replace('-', '−');

@@ -11,6 +11,7 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="glow" options={{ animation: 'fade' }} />
+          <Stack.Screen name="sun" options={{ animation: 'fade' }} />
           <Stack.Screen name="moon" options={{ animation: 'fade' }} />
           <Stack.Screen name="venus" options={{ animation: 'fade' }} />
           <Stack.Screen name="typhoon" options={{ animation: 'fade' }} />

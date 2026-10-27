@@ -10,6 +10,7 @@ import {
   MoonPhase,
   Observer,
   SearchAltitude,
+  SearchHourAngle,
   SearchRiseSet,
 } from 'astronomy-engine';
 import { levelFromScore, type Level } from './level';
@@ -185,4 +186,75 @@ function venusInfo(obs: Observer, civilDusk: Date, sunset: Date): VenusInfo {
 function conjunction(t: Date): ConjunctionInfo {
   const separation = AngleBetween(GeoVector(Body.Moon, t, true), GeoVector(Body.Venus, t, true));
   return separation < 6 ? { separation } : null;
+}
+
+/** A span of the day when the sun sits between two altitudes, e.g. golden hour. */
+export type LightWindow = { start: Date; end: Date } | null;
+
+export type SunDay = {
+  astronomicalDawn: Date | null;
+  sunrise: Date | null;
+  solarNoon: Date;
+  noonAltitude: number;
+  sunset: Date | null;
+  astronomicalDusk: Date | null;
+  morningBlue: LightWindow;
+  morningGolden: LightWindow;
+  eveningGolden: LightWindow;
+  eveningBlue: LightWindow;
+  /** Milliseconds of daylight today and yesterday, for the day-length trend. */
+  dayLength: number;
+  dayLengthYesterday: number;
+  sunriseAzimuth: number | null;
+  sunsetAzimuth: number | null;
+};
+
+// Common photographers' definitions: golden hour while the sun is between
+// 6° above and 4° below the horizon, blue hour from 4° to 8° below.
+const GOLDEN_TOP = 6;
+const GOLDEN_BOTTOM = -4;
+const BLUE_BOTTOM = -8;
+
+function crossing(obs: Observer, direction: 1 | -1, from: Date, altitude: number) {
+  return SearchAltitude(Body.Sun, obs, direction, from, 1, altitude)?.date ?? null;
+}
+
+function span(start: Date | null, end: Date | null): LightWindow {
+  return start && end ? { start, end } : null;
+}
+
+function daylight(obs: Observer, midnight: Date) {
+  const rise = SearchRiseSet(Body.Sun, obs, +1, midnight, 1)?.date ?? null;
+  const set = SearchRiseSet(Body.Sun, obs, -1, midnight, 1)?.date ?? null;
+  return { rise, set, length: rise && set && set > rise ? set.getTime() - rise.getTime() : 0 };
+}
+
+/** Everything about the sun's day at one place, from first light to full dark. */
+export function computeSunDay(lat: number, lon: number, date: Date, tzOffsetMinutes: number): SunDay {
+  const obs = new Observer(lat, lon, 0);
+  const midnight = new Date(localNoon(date, tzOffsetMinutes).getTime() - 12 * 3600_000);
+  const noonEvent = SearchHourAngle(Body.Sun, obs, 0, midnight, +1);
+  const solarNoon = noonEvent.time.date;
+  const today = daylight(obs, midnight);
+  const yesterday = daylight(obs, new Date(midnight.getTime() - 24 * 3600_000));
+
+  const up = (alt: number) => crossing(obs, +1, midnight, alt);
+  const down = (alt: number) => crossing(obs, -1, solarNoon, alt);
+
+  return {
+    astronomicalDawn: up(-18),
+    sunrise: today.rise,
+    solarNoon,
+    noonAltitude: noonEvent.hor.altitude,
+    sunset: today.set,
+    astronomicalDusk: down(-18),
+    morningBlue: span(up(BLUE_BOTTOM), up(GOLDEN_BOTTOM)),
+    morningGolden: span(up(GOLDEN_BOTTOM), up(GOLDEN_TOP)),
+    eveningGolden: span(down(GOLDEN_TOP), down(GOLDEN_BOTTOM)),
+    eveningBlue: span(down(GOLDEN_BOTTOM), down(BLUE_BOTTOM)),
+    dayLength: today.length,
+    dayLengthYesterday: yesterday.length,
+    sunriseAzimuth: today.rise ? altAz(Body.Sun, today.rise, obs).azimuth : null,
+    sunsetAzimuth: today.set ? altAz(Body.Sun, today.set, obs).azimuth : null,
+  };
 }

@@ -109,11 +109,11 @@ function CompactCity({ r, onPress }: { r: CityReport; onPress: () => void }) {
   );
 }
 
-function SunCard({ r }: { r: CityReport }) {
+function SunCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
   const { t, lang } = useSettings();
   const time = (d: Date) => formatTime(d, r.city.timezone, lang);
   return (
-    <Glass>
+    <Glass onPress={onPress}>
       <SunArc sunrise={r.sky.sun.sunrise} sunset={r.sky.sun.sunset} now={new Date()} />
       <View style={styles.split}>
         <View>
@@ -217,7 +217,7 @@ export default function TonightScreen() {
   const others = cities.filter((c) => c !== selected);
   const now = new Date();
   const phase = selected ? skyPhaseFor(now, selected.sky.sun.sunset, selected.sky.sun.civilDusk) : 'dusk';
-  const go = (path: '/glow' | '/moon' | '/venus' | '/typhoon') => selected && router.push({ pathname: path, params: { city: selected.city.id } });
+  const go = (path: '/glow' | '/sun' | '/moon' | '/venus' | '/typhoon') => selected && router.push({ pathname: path, params: { city: selected.city.id } });
 
   return (
     <View style={styles.fill}>
@@ -254,7 +254,7 @@ export default function TonightScreen() {
                 </Rise>
               ))}
               <Rise delay={70 * (others.length + 1)}>
-                <SunCard r={selected} />
+                <SunCard r={selected} onPress={() => go('/sun')} />
               </Rise>
               <Rise delay={70 * (others.length + 2)}>
                 <MoonCard r={selected} onPress={() => go('/moon')} />
