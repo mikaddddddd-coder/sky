@@ -144,6 +144,15 @@ const zh = {
   citySearchFailed: '搜索失败，请检查网络',
   cityRemove: '移除 {city}',
   citiesHint: '第一个城市会显示在「今晚」最上面',
+  moonSwipeHint: '左右滑动月亮，看看其他日子的月相',
+  moonToday: '今天',
+  moonTomorrow: '明天',
+  moonYesterday: '昨天',
+  moonDaysLater: '{n} 天后',
+  moonDaysAgo: '{n} 天前',
+  moonBackToday: '回到今天',
+  moonNextFull: '下次满月 {date}',
+  moonNextNew: '下次新月 {date}',
   tapForDetail: '查看详情',
 };
 
@@ -293,6 +302,15 @@ const en: Record<StringKey, string> = {
   citySearchFailed: 'Search failed, check your connection',
   cityRemove: 'Remove {city}',
   citiesHint: 'The first city leads the Tonight screen',
+  moonSwipeHint: 'Swipe the moon to see other nights',
+  moonToday: 'Tonight',
+  moonTomorrow: 'Tomorrow',
+  moonYesterday: 'Yesterday',
+  moonDaysLater: 'In {n} days',
+  moonDaysAgo: '{n} days ago',
+  moonBackToday: 'Back to tonight',
+  moonNextFull: 'Full moon {date}',
+  moonNextNew: 'New moon {date}',
   tapForDetail: 'Details',
 };
 

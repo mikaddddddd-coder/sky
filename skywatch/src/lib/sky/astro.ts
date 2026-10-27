@@ -11,6 +11,7 @@ import {
   Observer,
   SearchAltitude,
   SearchHourAngle,
+  SearchMoonPhase,
   SearchRiseSet,
 } from 'astronomy-engine';
 import { levelFromScore, type Level } from './level';
@@ -42,6 +43,17 @@ const PHASE_NAMES: MoonPhaseName[] = [
   'lastQuarter',
   'waningCrescent',
 ];
+
+// The moon moves about 12.2° of phase a day, so new, full and the quarters
+// get roughly half a day either side of the exact moment; the rest of the
+// cycle is crescent or gibbous.
+const MAIN_PHASE_WINDOW = 6.1;
+
+function phaseNameFor(angle: number): MoonPhaseName {
+  const nearest = Math.round(angle / 90) % 4;
+  if (Math.abs(angle - Math.round(angle / 90) * 90) <= MAIN_PHASE_WINDOW) return PHASE_NAMES[nearest * 2];
+  return PHASE_NAMES[Math.floor(angle / 90) * 2 + 1];
+}
 
 export type MoonInfo = {
   phaseName: MoonPhaseName;
@@ -108,7 +120,7 @@ function moonInfo(obs: Observer, noon: Date, sunset: Date): MoonInfo {
   const altitudeAfterSunset = altAz(Body.Moon, viewTime, obs).altitude;
   const moonrise = SearchRiseSet(Body.Moon, obs, +1, noon, 1)?.date ?? null;
   const moonset = moonrise ? SearchRiseSet(Body.Moon, obs, -1, moonrise, 2)?.date ?? null : null;
-  const phaseName = PHASE_NAMES[Math.round(phaseAngle / 45) % 8];
+  const phaseName = phaseNameFor(phaseAngle);
   const risesNearSunset = moonrise !== null && Math.abs(moonrise.getTime() - sunset.getTime()) < 75 * 60_000;
 
   let highlight: MoonInfo['highlight'] = 'none';
@@ -256,5 +268,23 @@ export function computeSunDay(lat: number, lon: number, date: Date, tzOffsetMinu
     dayLengthYesterday: yesterday.length,
     sunriseAzimuth: today.rise ? altAz(Body.Sun, today.rise, obs).azimuth : null,
     sunsetAzimuth: today.set ? altAz(Body.Sun, today.set, obs).azimuth : null,
+  };
+}
+
+/** Just the moon's look on a date: cheap enough to call on every drag step. */
+export function moonPhaseAt(date: Date) {
+  const phaseAngle = MoonPhase(date);
+  return {
+    illumination: Illumination(Body.Moon, date).phase_fraction,
+    waxing: phaseAngle < 180,
+    phaseName: phaseNameFor(phaseAngle),
+  };
+}
+
+/** The next full and new moon after `date`. */
+export function nextFullAndNew(date: Date) {
+  return {
+    full: SearchMoonPhase(180, date, 40)?.date ?? null,
+    new: SearchMoonPhase(0, date, 40)?.date ?? null,
   };
 }

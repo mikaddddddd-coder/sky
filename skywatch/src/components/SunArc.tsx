@@ -19,8 +19,11 @@ export function SunArc({ sunrise, sunset, now, height = 116 }: { sunrise: Date; 
   const id = useSvgId('sunarc');
   const h = height;
   const pad = 6;
-  const base = h - 26;
-  const amp = base - 14;
+  // Leave room above the peak and below the deepest dip for the sun's halo.
+  const margin = 14;
+  const dip = Math.sin(Math.PI * NIGHT);
+  const amp = (h - margin * 2) / (1 + dip);
+  const base = margin + amp;
 
   const start = sunrise.getTime();
   const span = sunset.getTime() - start;
