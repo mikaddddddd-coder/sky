@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseButton } from '../components/CloseButton';
 import { CycloneIcon } from '../components/Icons';
+import { Rise, useCountUp } from '../components/Motion';
 import { SceneBackground } from '../components/SceneBackground';
 import { colors, spacing, type } from '../constants/theme';
 import { useCityReport } from '../lib/report';
@@ -13,16 +14,17 @@ export default function TyphoonScene() {
   const r = useCityReport(city);
   const { t, lang } = useSettings();
   const ty = r?.typhoon;
+  const km = useCountUp(ty ? Math.round(ty.km) : 0, 1100, 450);
   const level = ty?.cyclone.alertLevel;
   const levelLabel = level === 'green' || level === 'orange' || level === 'red' ? t(`alert_${level}`) : level;
 
   return (
     <View style={styles.fill}>
-      <SceneBackground scene="typhoon" />
+      <SceneBackground scene="typhoon" fadeIn />
       <SafeAreaView style={[styles.fill, styles.content]}>
         {r && ty && (
           <>
-            <View style={styles.top}>
+            <Rise style={styles.top}>
               <View style={styles.badge}>
                 <CycloneIcon color="#2F5FA8" size={30} />
               </View>
@@ -30,18 +32,18 @@ export default function TyphoonScene() {
                 {t('typhoonAlert', { level: levelLabel ?? '' })}
               </Text>
               {!!ty.cyclone.fromDate && <Text style={styles.meta}>{ty.cyclone.fromDate.slice(0, 10)}</Text>}
-            </View>
+            </Rise>
 
-            <View style={styles.bottom}>
+            <Rise delay={250} distance={24} style={styles.bottom}>
               <Text style={styles.eyebrow}>{t('typhoonEyebrow')}</Text>
               <Text style={styles.headline}>{t('typhoonHeadline', { name: ty.cyclone.name, city: r.city.name[lang] })}</Text>
               <View style={styles.rule} />
               <View style={styles.figureRow}>
-                <Text style={styles.figure}>{Math.round(ty.km)}</Text>
+                <Text style={styles.figure}>{km}</Text>
                 <Text style={styles.unit}>km</Text>
               </View>
               <Text style={styles.eyebrow}>{t('typhoonDistance')}</Text>
-            </View>
+            </Rise>
           </>
         )}
       </SafeAreaView>

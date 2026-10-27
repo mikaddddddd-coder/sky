@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 import { colors } from '../constants/theme';
+import { useProgress } from './Motion';
 
 export function SunArc({ sunrise, sunset, now }: { sunrise: Date; sunset: Date; now: Date }) {
   const [w, setW] = useState(300);
+  const travel = useProgress(1400, 300);
   const h = 110;
   const pad = 18;
   const base = h - 12;
@@ -30,7 +32,7 @@ export function SunArc({ sunrise, sunset, now }: { sunrise: Date; sunset: Date; 
     return d;
   };
   const golden = sunset.getTime() - 60 * 60_000;
-  const sun = at(now.getTime());
+  const sun = at(sunrise.getTime() + (now.getTime() - sunrise.getTime()) * travel);
   const isDay = now >= sunrise && now <= sunset;
 
   return (

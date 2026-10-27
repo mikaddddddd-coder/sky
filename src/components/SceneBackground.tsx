@@ -1,9 +1,10 @@
 // Full-bleed atmospheric backdrops, drawn with gradients and soft radial glows
 // (no photos), one per scene: the live sky, sunset clouds, moonlit night, typhoon.
-import { useState } from 'react';
-import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Platform, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import Svg, { Circle, Defs, Ellipse, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 import type { SkyPhase } from '../constants/theme';
+import { useSvgId } from './useSvgId';
 
 export type Scene = SkyPhase | 'glow' | 'moon' | 'typhoon';
 
@@ -65,29 +66,34 @@ export function skyPhaseFor(now: Date, sunset: Date, civilDusk: Date): SkyPhase 
   return 'night';
 }
 
-export function SceneBackground({ scene }: { scene: Scene }) {
+export function SceneBackground({ scene, fadeIn = false }: { scene: Scene; fadeIn?: boolean }) {
   const [size, setSize] = useState({ w: 390, h: 844 });
+  const opacity = useRef(new Animated.Value(fadeIn ? 0 : 1)).current;
+  useEffect(() => {
+    if (fadeIn) Animated.timing(opacity, { toValue: 1, duration: 450, useNativeDriver: Platform.OS !== 'web' }).start();
+  }, [fadeIn, opacity]);
   const onLayout = (e: LayoutChangeEvent) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height });
   const def = SCENES[scene];
+  const id = useSvgId('scene');
   const { w, h } = size;
 
   return (
-    <View style={StyleSheet.absoluteFill} onLayout={onLayout} pointerEvents="none">
+    <Animated.View style={[StyleSheet.absoluteFill, { opacity }]} onLayout={onLayout} pointerEvents="none">
       <Svg width={w} height={h}>
         <Defs>
-          <LinearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <LinearGradient id={`${id}-sky`} x1="0" y1="0" x2="0" y2="1">
             {def.stops.map(([o, c]) => (
               <Stop key={o} offset={o} stopColor={c} />
             ))}
           </LinearGradient>
           {def.blobs.map((b, i) => (
-            <RadialGradient key={i} id={`b${i}`} cx="50%" cy="50%" r="50%">
+            <RadialGradient key={i} id={`${id}-b${i}`} cx="50%" cy="50%" r="50%">
               <Stop offset={0} stopColor={b.color} stopOpacity={b.opacity} />
               <Stop offset={1} stopColor={b.color} stopOpacity={0} />
             </RadialGradient>
           ))}
           {scene === 'typhoon' && (
-            <RadialGradient id="limb" cx="50%" cy="50%" r="50%">
+            <RadialGradient id={`${id}-limb`} cx="50%" cy="50%" r="50%">
               <Stop offset={0} stopColor="#7FA8E0" stopOpacity={0.15} />
               <Stop offset={0.8} stopColor="#B7D2F5" stopOpacity={0.4} />
               <Stop offset={0.93} stopColor="#F2F8FF" stopOpacity={0.95} />
@@ -96,12 +102,12 @@ export function SceneBackground({ scene }: { scene: Scene }) {
             </RadialGradient>
           )}
         </Defs>
-        <Rect x={0} y={0} width={w} height={h} fill="url(#sky)" />
-        {scene === 'typhoon' && <Circle cx={w * 0.02} cy={h * 0.42} r={h * 0.56} fill="url(#limb)" />}
+        <Rect x={0} y={0} width={w} height={h} fill={`url(#${id}-sky)`} />
+        {scene === 'typhoon' && <Circle cx={w * 0.02} cy={h * 0.42} r={h * 0.56} fill={`url(#${id}-limb)`} />}
         {def.blobs.map((b, i) => (
-          <Ellipse key={i} cx={b.cx * w} cy={b.cy * h} rx={b.rx * w} ry={b.ry * h} fill={`url(#b${i})`} />
+          <Ellipse key={i} cx={b.cx * w} cy={b.cy * h} rx={b.rx * w} ry={b.ry * h} fill={`url(#${id}-b${i})`} />
         ))}
       </Svg>
-    </View>
+    </Animated.View>
   );
 }

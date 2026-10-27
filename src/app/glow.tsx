@@ -1,8 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseButton } from '../components/CloseButton';
 import { Glass } from '../components/Glass';
+import { easeOut, Rise, useCountUp } from '../components/Motion';
 import { SceneBackground } from '../components/SceneBackground';
 import { colors, spacing, type } from '../constants/theme';
 import { useCityReport } from '../lib/report';
@@ -10,12 +12,17 @@ import { useSettings } from '../lib/settings';
 
 const POSITIVE = new Set(['canvas', 'clearWest', 'afterRain', 'clean']);
 
-function Bar({ label, value }: { label: string; value: number }) {
+function Bar({ label, value, delay }: { label: string; value: number; delay: number }) {
+  const grow = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(grow, { toValue: 1, duration: 900, delay, easing: easeOut, useNativeDriver: false }).start();
+  }, [grow, delay]);
+  const width = grow.interpolate({ inputRange: [0, 1], outputRange: ['0%', `${Math.max(2, Math.min(100, value))}%`] });
   return (
     <View style={styles.barRow}>
       <Text style={styles.barLabel}>{label}</Text>
       <View style={styles.barTrack}>
-        <View style={[styles.barFill, { width: `${Math.max(2, Math.min(100, value))}%` }]} />
+        <Animated.View style={[styles.barFill, { width }]} />
       </View>
       <Text style={styles.barValue}>{Math.round(value)}%</Text>
     </View>
@@ -27,34 +34,37 @@ export default function GlowScene() {
   const r = useCityReport(city);
   const { t, lang } = useSettings();
   const g = r?.glow;
+  const shown = useCountUp(g?.score ?? 0, 900, 250);
 
   return (
     <View style={styles.fill}>
-      <SceneBackground scene="glow" />
+      <SceneBackground scene="glow" fadeIn />
       <SafeAreaView style={styles.fill}>
         {r && g && (
           <ScrollView contentContainerStyle={styles.content}>
+            <Rise distance={24} duration={700}>
             <Glass style={styles.panel}>
               <Text style={styles.eyebrow}>{t('glowDetailLead', { city: r.city.name[lang] })}</Text>
-              <Text style={styles.headline}>{t('glowDetailTitle', { pct: g.score })}</Text>
+              <Text style={styles.headline}>{t('glowDetailTitle', { pct: shown })}</Text>
 
               <View style={styles.reasons}>
-                {g.reasons.map((reason) => (
-                  <View key={reason} style={styles.reason}>
+                {g.reasons.map((reason, i) => (
+                  <Rise key={reason} delay={350 + i * 90} style={styles.reason}>
                     <View style={[styles.dot, { backgroundColor: POSITIVE.has(reason) ? colors.good : colors.bad }]} />
                     <Text style={styles.reasonText}>{t(`glow_reason_${reason}`)}</Text>
-                  </View>
+                  </Rise>
                 ))}
               </View>
 
               <Text style={styles.section}>{t('glowCloudLayers')}</Text>
-              <Bar label={t('glowLayerHigh')} value={g.inputs.localHigh} />
-              <Bar label={t('glowLayerMid')} value={g.inputs.localMid} />
-              <Bar label={t('glowLayerLow')} value={g.inputs.localLow} />
-              <Bar label={t('glowWestLow')} value={g.inputs.westLow} />
+              <Bar label={t('glowLayerHigh')} value={g.inputs.localHigh} delay={500} />
+              <Bar label={t('glowLayerMid')} value={g.inputs.localMid} delay={580} />
+              <Bar label={t('glowLayerLow')} value={g.inputs.localLow} delay={660} />
+              <Bar label={t('glowWestLow')} value={g.inputs.westLow} delay={740} />
 
               <Text style={styles.method}>{t('glowMethod')}</Text>
             </Glass>
+            </Rise>
           </ScrollView>
         )}
       </SafeAreaView>

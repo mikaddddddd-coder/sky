@@ -1,7 +1,8 @@
 import { BlurView } from 'expo-blur';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Animated, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { colors, spacing } from '../constants/theme';
+import { usePressScale } from './Motion';
 
 type GlassProps = {
   children: ReactNode;
@@ -13,6 +14,7 @@ type GlassProps = {
 
 /** Frosted panel: blurs whatever sky is behind it, with a faint fill and hairline rim. */
 export function Glass({ children, style, onPress, tone = 'light', radius = 28 }: GlassProps) {
+  const press = usePressScale();
   const body = (
     <View style={[styles.wrap, { borderRadius: radius }, style]}>
       <BlurView intensity={tone === 'light' ? 30 : 45} tint="dark" style={[StyleSheet.absoluteFill, { borderRadius: radius }]} />
@@ -27,8 +29,8 @@ export function Glass({ children, style, onPress, tone = 'light', radius = 28 }:
   );
   if (!onPress) return body;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] })}>
-      {body}
+    <Pressable onPress={onPress} onPressIn={press.onPressIn} onPressOut={press.onPressOut}>
+      <Animated.View style={{ transform: [{ scale: press.scale }] }}>{body}</Animated.View>
     </Pressable>
   );
 }

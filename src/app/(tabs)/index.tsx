@@ -13,6 +13,7 @@ import {
   UmbrellaIcon,
 } from '../../components/Icons';
 import { MoonDisc } from '../../components/MoonDisc';
+import { Rise, useCountUp } from '../../components/Motion';
 import { SceneBackground, skyPhaseFor } from '../../components/SceneBackground';
 import { SunArc } from '../../components/SunArc';
 import { colors, spacing, type } from '../../constants/theme';
@@ -46,6 +47,7 @@ function HeroCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
   const time = (d: Date) => formatTime(d, r.city.timezone, lang);
   const g = r.glow;
   const pct = (v: number) => `${Math.round(v)}%`;
+  const shown = useCountUp(g?.score ?? 0);
 
   return (
     <Glass onPress={g ? onPress : undefined}>
@@ -73,7 +75,7 @@ function HeroCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
           </View>
           <View style={styles.figureBox}>
             <View style={styles.figureRow}>
-              <Text style={styles.figure}>{g.score}</Text>
+              <Text style={styles.figure}>{shown}</Text>
               <Text style={styles.figureUnit}>%</Text>
             </View>
             <Text style={[styles.levelText, { color: LEVEL_COLOR[g.level] }]}>
@@ -90,6 +92,7 @@ function HeroCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
 
 function CompactCity({ r, onPress }: { r: CityReport; onPress: () => void }) {
   const { t, lang } = useSettings();
+  const shown = useCountUp(r.glow?.score ?? 0, 800, 300);
   return (
     <Glass onPress={onPress} style={styles.compact}>
       <View style={styles.compactRow}>
@@ -98,7 +101,7 @@ function CompactCity({ r, onPress }: { r: CityReport; onPress: () => void }) {
           <Text style={styles.sub}>{r.glow ? `${t('glowTitle')} · ${t(`level_${r.glow.level}`)}` : t('loadError')}</Text>
         </View>
         <View style={styles.figureRow}>
-          <Text style={styles.compactFigure}>{r.glow?.score ?? '–'}</Text>
+          <Text style={styles.compactFigure}>{r.glow ? shown : '–'}</Text>
           <Text style={styles.figureUnitSmall}>%</Text>
         </View>
       </View>
@@ -239,16 +242,29 @@ export default function TonightScreen() {
           {error && <Text style={styles.sub}>{t('loadError')}</Text>}
 
           {selected && (
-            <>
-              <HeroCard r={selected} onPress={() => go('/glow')} />
-              {others.map((c) => (
-                <CompactCity key={c.city.id} r={c} onPress={() => setSelectedId(c.city.id)} />
+            // Keyed by city so switching cities replays the entrance.
+            <View key={selected.city.id} style={styles.stack}>
+              <Rise>
+                <HeroCard r={selected} onPress={() => go('/glow')} />
+              </Rise>
+              {others.map((c, i) => (
+                <Rise key={c.city.id} delay={70 * (i + 1)}>
+                  <CompactCity r={c} onPress={() => setSelectedId(c.city.id)} />
+                </Rise>
               ))}
-              <SunCard r={selected} />
-              <MoonCard r={selected} onPress={() => go('/moon')} />
-              <VenusRow r={selected} />
-              <TyphoonRow r={selected} count={report?.activeCyclones.length ?? 0} onPress={() => go('/typhoon')} />
-            </>
+              <Rise delay={70 * (others.length + 1)}>
+                <SunCard r={selected} />
+              </Rise>
+              <Rise delay={70 * (others.length + 2)}>
+                <MoonCard r={selected} onPress={() => go('/moon')} />
+              </Rise>
+              <Rise delay={70 * (others.length + 3)}>
+                <VenusRow r={selected} />
+              </Rise>
+              <Rise delay={70 * (others.length + 4)}>
+                <TyphoonRow r={selected} count={report?.activeCyclones.length ?? 0} onPress={() => go('/typhoon')} />
+              </Rise>
+            </View>
           )}
 
           <Text style={styles.footer}>{t('dataSource')}</Text>
@@ -260,6 +276,7 @@ export default function TonightScreen() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
+  stack: { gap: spacing.md - 4 },
   content: { padding: spacing.md, gap: spacing.md - 4, paddingBottom: 110 },
   header: { gap: 2, marginBottom: spacing.xs, marginTop: spacing.sm },
   title: { ...type.largeTitle, color: colors.text },

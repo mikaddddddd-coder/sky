@@ -3,9 +3,11 @@ import { useState } from 'react';
 import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Line, Path } from 'react-native-svg';
 import { colors, type } from '../constants/theme';
+import { useProgress } from './Motion';
 
 export function MoonDial({ rise, set, now, label }: { rise: Date; set: Date; now: Date; label: (d: Date) => string }) {
   const [w, setW] = useState(340);
+  const sweepIn = useProgress(1300, 500);
   const h = 120;
   const cx = w / 2;
   const r = w * 0.62;
@@ -27,7 +29,7 @@ export function MoonDial({ rise, set, now, label }: { rise: Date; set: Date; now
   }
   const f = (now.getTime() - rise.getTime()) / span;
   const nowVisible = f >= 0 && f <= 1;
-  const nowA = angleAt(Math.min(1, Math.max(0, f)));
+  const nowA = angleAt(Math.min(1, Math.max(0, f)) * sweepIn);
   const n1 = pt(nowA, r + 4);
   const n2 = pt(nowA, r - 16);
   const a0 = pt(angleAt(0), r - 22);

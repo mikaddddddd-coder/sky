@@ -4,9 +4,26 @@
 
 ## 运行
 
+### 在 Mac 的 iOS 模拟器里运行
+
+1. 从 App Store 安装 **Xcode**，打开一次，同意许可协议，等它装完组件
+2. 安装 Node.js 20 或更高版本（https://nodejs.org ）
+3. 在项目目录运行：
+
 ```bash
 npm install
-npx expo start        # 用 iPhone 上的 Expo Go 扫码
+npx expo start
+```
+
+4. 终端出现二维码后按 **i**，会自动打开 iPhone 模拟器并装好 Expo Go
+
+### 在自己的 iPhone 上运行
+
+`npx expo start` 后用 iPhone 相机扫二维码（需要先装 Expo Go，手机和电脑在同一个 Wi-Fi）。
+
+### 类型检查
+
+```bash
 npm run typecheck
 ```
 
