@@ -1,9 +1,10 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SkyBackground } from '../../components/SkyBackground';
+import { Glass } from '../../components/Glass';
+import { SceneBackground } from '../../components/SceneBackground';
 import { CITIES } from '../../constants/cities';
 import { CheckIcon } from '../../components/Icons';
-import { colors, radius, spacing, type } from '../../constants/theme';
+import { colors, spacing, type } from '../../constants/theme';
 import { useSettings } from '../../lib/settings';
 
 export default function CitiesScreen() {
@@ -16,43 +17,37 @@ export default function CitiesScreen() {
   };
 
   return (
-    <SkyBackground phase="night">
+    <View style={styles.safe}>
+      <SceneBackground scene="night" />
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>{t('selectCities')}</Text>
           {CITIES.map((c) => {
             const on = settings.cityIds.includes(c.id);
             return (
-              <Pressable key={c.id} onPress={() => toggle(c.id)} style={[styles.item, on && styles.itemOn]}>
+              <Glass key={c.id} onPress={() => toggle(c.id)} tone="dark" radius={22} style={on ? styles.itemOn : undefined}>
+                <View style={styles.item}>
                 <View>
                   <Text style={styles.name}>{c.name[lang]}</Text>
                   <Text style={styles.sub}>{c.name[lang === 'zh' ? 'en' : 'zh']}</Text>
                 </View>
-                {on && <CheckIcon color={colors.glow} size={20} />}
-              </Pressable>
+                {on && <CheckIcon color={colors.text} size={20} />}
+                </View>
+              </Glass>
             );
           })}
         </ScrollView>
       </SafeAreaView>
-    </SkyBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  content: { padding: spacing.md, gap: spacing.sm },
+  content: { padding: spacing.md, gap: spacing.sm, paddingBottom: 110 },
   title: { ...type.largeTitle, color: colors.text, marginVertical: spacing.sm },
-  item: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.cardBorder,
-  },
-  itemOn: { borderColor: colors.glow },
+  item: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  itemOn: { borderColor: 'rgba(255,255,255,0.7)' },
   name: { ...type.headline, fontSize: 17, color: colors.text },
   sub: { ...type.caption, color: colors.textDim },
 });

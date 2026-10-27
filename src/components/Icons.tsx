@@ -86,3 +86,52 @@ export function MoonPhaseIcon({ size = 22, color, illumination, waxing }: IconPr
     </Svg>
   );
 }
+
+export function CloudIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Path d="M7 18h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7.1 9.1 4.5 4.5 0 0 0 7 18Z" />
+    </Frame>
+  );
+}
+
+export function HighCloudIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Path d="M4 9h11M7 13h13M4 17h9" />
+    </Frame>
+  );
+}
+
+export function DropIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Path d="M12 3.5s6 6.4 6 10.5a6 6 0 0 1-12 0c0-4.1 6-10.5 6-10.5Z" />
+    </Frame>
+  );
+}
+
+export function UmbrellaIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Path d="M3.5 12a8.5 8.5 0 0 1 17 0Z" />
+      <Path d="M12 12v6.5a2 2 0 0 1-4 0" />
+    </Frame>
+  );
+}
+
+export function ChevronRightIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Path d="M9.5 6l6 6-6 6" />
+    </Frame>
+  );
+}
+
+export function CloseIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Path d="M7 7l10 10M17 7L7 17" />
+    </Frame>
+  );
+}

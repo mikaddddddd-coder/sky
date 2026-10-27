@@ -15,12 +15,36 @@ import {
 import { levelFromScore, type Level } from './level';
 
 export type SunTimes = {
+  sunrise: Date;
   sunset: Date;
   civilDusk: Date;
   sunsetAzimuth: number;
 };
 
+export type MoonPhaseName =
+  | 'new'
+  | 'waxingCrescent'
+  | 'firstQuarter'
+  | 'waxingGibbous'
+  | 'full'
+  | 'waningGibbous'
+  | 'lastQuarter'
+  | 'waningCrescent';
+
+const PHASE_NAMES: MoonPhaseName[] = [
+  'new',
+  'waxingCrescent',
+  'firstQuarter',
+  'waxingGibbous',
+  'full',
+  'waningGibbous',
+  'lastQuarter',
+  'waningCrescent',
+];
+
 export type MoonInfo = {
+  phaseName: MoonPhaseName;
+  moonset: Date | null;
   illumination: number; // 0–1
   phaseAngle: number; // 0 new, 90 first quarter, 180 full, 270 last quarter
   waxing: boolean;
@@ -63,7 +87,8 @@ export function computeEveningSky(lat: number, lon: number, date: Date, tzOffset
 
   const sunset = SearchRiseSet(Body.Sun, obs, -1, noon, 1)?.date ?? new Date(noon.getTime() + 6 * 3600_000);
   const civilDusk = SearchAltitude(Body.Sun, obs, -1, noon, 1, -6)?.date ?? new Date(sunset.getTime() + 30 * 60_000);
-  const sun: SunTimes = { sunset, civilDusk, sunsetAzimuth: altAz(Body.Sun, sunset, obs).azimuth };
+  const sunrise = SearchRiseSet(Body.Sun, obs, +1, new Date(noon.getTime() - 12 * 3600_000), 1)?.date ?? new Date(noon.getTime() - 6 * 3600_000);
+  const sun: SunTimes = { sunrise, sunset, civilDusk, sunsetAzimuth: altAz(Body.Sun, sunset, obs).azimuth };
 
   return { sun, moon: moonInfo(obs, noon, sunset), venus: venusInfo(obs, civilDusk), conjunction: conjunction(civilDusk) };
 }
@@ -75,6 +100,8 @@ function moonInfo(obs: Observer, noon: Date, sunset: Date): MoonInfo {
   const waxing = phaseAngle < 180;
   const altitudeAfterSunset = altAz(Body.Moon, viewTime, obs).altitude;
   const moonrise = SearchRiseSet(Body.Moon, obs, +1, noon, 1)?.date ?? null;
+  const moonset = moonrise ? SearchRiseSet(Body.Moon, obs, -1, moonrise, 2)?.date ?? null : null;
+  const phaseName = PHASE_NAMES[Math.round(phaseAngle / 45) % 8];
   const risesNearSunset = moonrise !== null && Math.abs(moonrise.getTime() - sunset.getTime()) < 75 * 60_000;
 
   let highlight: MoonInfo['highlight'] = 'none';
@@ -93,7 +120,18 @@ function moonInfo(obs: Observer, noon: Date, sunset: Date): MoonInfo {
   }
   score = Math.round(Math.min(100, score));
 
-  return { illumination, phaseAngle, waxing, moonrise, altitudeAfterSunset, highlight, score, level: levelFromScore(score) };
+  return {
+    illumination,
+    phaseAngle,
+    phaseName,
+    waxing,
+    moonrise,
+    moonset,
+    altitudeAfterSunset,
+    highlight,
+    score,
+    level: levelFromScore(score),
+  };
 }
 
 function venusInfo(obs: Observer, civilDusk: Date): VenusInfo {

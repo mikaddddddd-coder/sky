@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card } from '../../components/Card';
-import { SkyBackground } from '../../components/SkyBackground';
+import { Glass } from '../../components/Glass';
+import { SceneBackground } from '../../components/SceneBackground';
 import { colors, radius, spacing, type } from '../../constants/theme';
 import type { StringKey } from '../../lib/i18n/strings';
 import { useSettings, type Settings } from '../../lib/settings';
@@ -22,7 +22,8 @@ export default function SettingsScreen() {
   const { settings, update, t } = useSettings();
 
   return (
-    <SkyBackground phase="night">
+    <View style={styles.safe}>
+      <SceneBackground scene="night" />
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>{t('tabSettings')}</Text>
@@ -40,7 +41,7 @@ export default function SettingsScreen() {
           </View>
 
           <Text style={styles.section}>{t('settingsAlerts')}</Text>
-          <Card>
+          <Glass tone="dark" radius={22}>
             {ALERTS.map((a) => (
               <View key={a.key} style={styles.alertRow}>
                 <View style={{ flex: 1 }}>
@@ -55,10 +56,10 @@ export default function SettingsScreen() {
                 />
               </View>
             ))}
-          </Card>
+          </Glass>
         </ScrollView>
       </SafeAreaView>
-    </SkyBackground>
+    </View>
   );
 }
 
@@ -67,11 +68,11 @@ const styles = StyleSheet.create({
   content: { padding: spacing.md, gap: spacing.sm },
   title: { ...type.largeTitle, color: colors.text, marginVertical: spacing.sm },
   section: { ...type.label, color: colors.textDim, marginTop: spacing.md },
-  segment: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: radius.md, padding: 4 },
+  segment: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: radius.md, padding: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.glassBorder },
   seg: { flex: 1, paddingVertical: spacing.sm, borderRadius: radius.md - 4, alignItems: 'center' },
-  segOn: { backgroundColor: colors.glow },
+  segOn: { backgroundColor: 'rgba(255,255,255,0.9)' },
   segText: { ...type.body, fontWeight: '500', color: colors.textDim },
-  segTextOn: { color: '#1A0E1F' },
+  segTextOn: { color: '#141833' },
   alertRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs },
   alertTitle: { ...type.headline, color: colors.text },
   alertDesc: { ...type.caption, color: colors.textDim },

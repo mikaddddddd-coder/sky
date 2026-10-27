@@ -1,4 +1,6 @@
+import { BlurView } from 'expo-blur';
 import Tabs from 'expo-router/tabs';
+import { StyleSheet } from 'react-native';
 import { PinIcon, SlidersIcon, SunsetIcon } from '../../components/Icons';
 import { colors } from '../../constants/theme';
 import { useSettings } from '../../lib/settings';
@@ -13,8 +15,9 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: colors.tabBar, borderTopColor: colors.cardBorder },
-        tabBarActiveTintColor: colors.glow,
+        tabBarStyle: { position: 'absolute', backgroundColor: 'rgba(8,10,28,0.35)', borderTopColor: colors.glassBorder, borderTopWidth: StyleSheet.hairlineWidth },
+        tabBarBackground: () => <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />,
+        tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.textDim,
         tabBarLabelStyle: { fontSize: 10, lineHeight: 14, fontWeight: '500', letterSpacing: 0.2, paddingBottom: 2 },
       }}
