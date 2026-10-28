@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { memo, useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, RefreshControl, ScrollView, StyleSheet, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
 import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Glass } from '../../components/Glass';
+import { Glass, type Aura } from '../../components/Glass';
 import { MoonDisc } from '../../components/MoonDisc';
 import { Rise, useCountUp } from '../../components/Motion';
 import { skyPhaseFor } from '../../components/SceneBackground';
@@ -26,15 +26,29 @@ const LEVEL_COLOR: Record<Level, string> = {
   poor: colors.text,
 };
 
-// Every card on the page is the same height, so the stack reads as one rhythm.
-const CARD_HEIGHT = 176;
+// Cards come in three sizes so the page has a lead: the sunset glow is the hero,
+// sun and typhoon run full width, and moon and Venus sit side by side.
+const HEIGHT = { hero: 240, wide: 176, tile: 224, strip: 136 };
+const RADAR = 150;
+
+// Each card glows in its own colour. The glow card's light follows tonight's odds,
+// so a promising evening is visibly louder than a quiet one.
+const GLOW_AURA: Record<Level, string> = { excellent: '#FF4F7B', good: '#FF7444', fair: '#E07752', poor: '#C2577A' };
+const AURA = {
+  sun: { color: '#FFA53D', x: 0.85, y: 1.05, strength: 0.22 },
+  moon: { color: '#8FA8FF', x: 0.75, y: 0.3, strength: 0.2 },
+  venus: { color: '#B48CFF', x: 0.3, y: 0.35, strength: 0.22 },
+  // Typhoon stays blue either way; a storm in range is just a deeper, stronger blue.
+  calm: { color: '#6FB4FF', x: 0.85, y: 0.5, strength: 0.2 },
+  alert: { color: '#3D7BFF', x: 0.85, y: 0.5, strength: 0.32 },
+} satisfies Record<string, Aura>;
 
 // Type on this page runs in four steps: a small spaced label names each card,
 // one line says what tonight is like, the numbers are large and light, and
 // supporting detail is small and dim.
-function Card({ label, onPress, children }: { label: string; onPress?: () => void; children: React.ReactNode }) {
+function Card({ label, height, aura, onPress, children }: { label: string; height: number; aura: Aura; onPress?: () => void; children: React.ReactNode }) {
   return (
-    <Glass onPress={onPress} style={{ height: CARD_HEIGHT }} contentStyle={styles.cardContent} sheen>
+    <Glass onPress={onPress} style={{ height }} contentStyle={styles.cardContent} aura={aura} sheen>
       <Text style={styles.eyebrow}>{label}</Text>
       <View style={styles.cardBody}>{children}</View>
     </Glass>
@@ -76,9 +90,12 @@ function GlowCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
   const g = r.glow;
   const pct = (v: number) => `${Math.round(v)}%`;
   const shown = useCountUp(g?.score ?? 0);
+  const aura: Aura = g
+    ? { color: GLOW_AURA[g.level], x: 0.8, y: 0.95, strength: 0.2 + (0.2 * g.score) / 100 }
+    : { color: GLOW_AURA.poor, x: 0.8, y: 0.95, strength: 0.18 };
 
   return (
-    <Card label={t('glowTitle')} onPress={g ? onPress : undefined}>
+    <Card label={t('glowTitle')} height={HEIGHT.hero} aura={aura} onPress={g ? onPress : undefined}>
       <View style={styles.cardRow}>
         <View style={styles.cardText}>
           {g ? (
@@ -95,7 +112,7 @@ function GlowCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
         </View>
         {g && (
           <View style={styles.figureRow}>
-            <Text style={styles.figure}>{shown}</Text>
+            <Text style={styles.heroFigure}>{shown}</Text>
             <Text style={styles.figureUnit}>%</Text>
           </View>
         )}
@@ -108,7 +125,7 @@ function SunCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
   const { t, lang } = useSettings();
   const time = (d: Date) => formatTime(d, r.city.timezone, lang);
   return (
-    <Card label={t('sunTitle')} onPress={onPress}>
+    <Card label={t('sunTitle')} height={HEIGHT.wide} aura={AURA.sun} onPress={onPress}>
       <SunArc sunrise={r.sky.sun.sunrise} sunset={r.sky.sun.sunset} now={new Date()} height={76} />
       <View style={styles.split}>
         <View style={styles.inlineTime}>
@@ -129,21 +146,19 @@ function MoonCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
   const time = (d: Date | null) => (d ? formatTime(d, r.city.timezone, lang) : '—');
   const m = r.sky.moon;
   return (
-    <Card label={t('moonTitle')} onPress={onPress}>
-      <View style={styles.cardRow}>
-        <View style={styles.cardText}>
-          <View style={styles.headBlock}>
-            <Text style={styles.headline} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{t(`phase_${m.phaseName}`)}</Text>
-            <Text style={styles.detail} numberOfLines={1}>
-              {t(`moon_highlight_${m.highlight}`)}
-            </Text>
-          </View>
-          <View style={styles.metrics}>
-            <Metric label={t('moonrise_label')} value={time(m.moonrise)} />
-            <Metric label={t('moonset_label')} value={time(m.moonset)} />
-          </View>
-        </View>
-        <MoonDisc size={108} illumination={m.illumination} waxing={m.waxing} />
+    <Card label={t('moonTitle')} height={HEIGHT.tile} aura={AURA.moon} onPress={onPress}>
+      <View style={styles.tileArt}>
+        <MoonDisc size={84} illumination={m.illumination} waxing={m.waxing} />
+      </View>
+      <View style={styles.headBlock}>
+        <Text style={styles.tileHeadline} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+          {t(`phase_${m.phaseName}`)}
+        </Text>
+        <Text style={styles.detail} numberOfLines={2}>
+          {t('moonrise_label')} {time(m.moonrise)}
+          {'\n'}
+          {t('moonset_label')} {time(m.moonset)}
+        </Text>
       </View>
     </Card>
   );
@@ -154,17 +169,17 @@ function VenusCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
   const v = r.sky.venus;
   const c = r.sky.conjunction;
   return (
-    <Card label={t('venusTitle')} onPress={onPress}>
-      <View style={styles.cardRow}>
-        <View style={styles.cardText}>
-          <View style={styles.headBlock}>
-            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={[styles.headline, { color: LEVEL_COLOR[v.level] }]}>{t(`venusLevel_${v.level}`)}</Text>
-            <Text style={[styles.detail, c && { color: colors.good }]} numberOfLines={2}>
-              {c ? t('conjunctionDetail', { deg: c.separation.toFixed(1) }) : t(`venus_highlight_${v.highlight}`)}
-            </Text>
-          </View>
-        </View>
-        <VenusMini venus={v} width={160} height={116} />
+    <Card label={t('venusTitle')} height={HEIGHT.tile} aura={AURA.venus} onPress={onPress}>
+      <View style={styles.tileArt}>
+        <VenusMini venus={v} width={136} height={84} />
+      </View>
+      <View style={styles.headBlock}>
+        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={[styles.tileHeadline, { color: LEVEL_COLOR[v.level] }]}>
+          {t(`venusLevel_${v.level}`)}
+        </Text>
+        <Text style={[styles.detail, c && { color: colors.good }]} numberOfLines={2}>
+          {c ? t('conjunctionDetail', { deg: c.separation.toFixed(1) }) : t(`venus_highlight_${v.highlight}`)}
+        </Text>
       </View>
     </Card>
   );
@@ -176,9 +191,13 @@ function TyphoonCard({ r, count, onPress }: { r: CityReport; count: number; onPr
   const near = r.nearestCyclone;
   const city = r.city.name[lang];
   return (
-    <Card label={t('typhoonTitle')} onPress={onPress}>
+    <Card label={t('typhoonTitle')} height={HEIGHT.strip} aura={ty ? AURA.alert : AURA.calm} onPress={onPress}>
+      {/* The radar sits large in the corner, partly cut off by the card's edge. */}
+      <View style={styles.radar}>
+        <TyphoonRadar r={r} size={RADAR} />
+      </View>
       <View style={styles.cardRow}>
-        <View style={styles.cardText}>
+        <View style={[styles.cardText, styles.radarClear]}>
           {ty ? (
             <>
               <View style={styles.figureRow}>
@@ -202,37 +221,39 @@ function TyphoonCard({ r, count, onPress }: { r: CityReport; count: number; onPr
             </View>
           )}
         </View>
-        <TyphoonRadar r={r} size={116} />
       </View>
     </Card>
   );
 }
 
 /** Everything about one city's evening, as one page of the pager. */
-function CityPage({ r, count, onOpen }: { r: CityReport; count: number; onOpen: (path: ScenePath) => void }) {
+const CityPage = memo(function CityPage({ r, count, onOpen }: { r: CityReport; count: number; onOpen: (cityId: string, path: ScenePath) => void }) {
+  const open = (path: ScenePath) => onOpen(r.city.id, path);
   return (
     <View style={styles.stack}>
       <Rise>
         <CityHeader r={r} />
       </Rise>
       <Rise delay={50}>
-        <GlowCard r={r} onPress={() => onOpen('/glow')} />
+        <GlowCard r={r} onPress={() => open('/glow')} />
       </Rise>
       <Rise delay={100}>
-        <SunCard r={r} onPress={() => onOpen('/sun')} />
+        <SunCard r={r} onPress={() => open('/sun')} />
       </Rise>
-      <Rise delay={150}>
-        <MoonCard r={r} onPress={() => onOpen('/moon')} />
-      </Rise>
-      <Rise delay={200}>
-        <VenusCard r={r} onPress={() => onOpen('/venus')} />
-      </Rise>
+      <View style={styles.pair}>
+        <Rise delay={150} style={styles.half}>
+          <MoonCard r={r} onPress={() => open('/moon')} />
+        </Rise>
+        <Rise delay={200} style={styles.half}>
+          <VenusCard r={r} onPress={() => open('/venus')} />
+        </Rise>
+      </View>
       <Rise delay={250}>
-        <TyphoonCard r={r} count={count} onPress={() => onOpen('/typhoon')} />
+        <TyphoonCard r={r} count={count} onPress={() => open('/typhoon')} />
       </Rise>
     </View>
   );
-}
+});
 
 type ScenePath = '/glow' | '/sun' | '/moon' | '/venus' | '/typhoon';
 
@@ -249,6 +270,13 @@ export default function TonightScreen() {
   const selected = cities[page];
   // Horizontal pager offset, so each city's sky can fade in as its page slides in.
   const scrollX = useRef(new Animated.Value(0)).current;
+  const openScene = useCallback(
+    (cityId: string, path: ScenePath) => router.push({ pathname: path, params: { city: cityId } }),
+    [router],
+  );
+  // Only the current page and its neighbours are drawn; each full page is five frosted
+  // cards over its own star field, so far-off cities would cost a lot for nothing.
+  const near = (i: number) => Math.abs(i - page) <= 1;
   const jump = (i: number) => {
     pager.current?.scrollTo({ x: i * width, animated: true });
     setIndex(i);
@@ -259,18 +287,22 @@ export default function TonightScreen() {
       {/* One sky per city, stacked in page order. Each fades in over the previous one as
           its page slides in, so switching cities crossfades along with the swipe. */}
       {cities.length === 0 && <TonightBackdrop phase="dusk" />}
-      {cities.map((r, i) => (
-        <Animated.View
-          key={r.city.id}
-          style={[
-            StyleSheet.absoluteFill,
-            i > 0 && { opacity: scrollX.interpolate({ inputRange: [(i - 1) * width, i * width], outputRange: [0, 1], extrapolate: 'clamp' }) },
-          ]}
-          pointerEvents="none"
-        >
-          <TonightBackdrop phase={skyPhaseFor(new Date(), r.sky.sun.sunset, r.sky.sun.civilDusk)} />
-        </Animated.View>
-      ))}
+      {cities.map(
+        (r, i) =>
+          near(i) && (
+            <Animated.View
+              key={r.city.id}
+              style={[
+                StyleSheet.absoluteFill,
+                // The lowest sky drawn stays solid so nothing dark shows through mid-swipe.
+                i > 0 && i >= page && { opacity: scrollX.interpolate({ inputRange: [(i - 1) * width, i * width], outputRange: [0, 1], extrapolate: 'clamp' }) },
+              ]}
+              pointerEvents="none"
+            >
+              <TonightBackdrop phase={skyPhaseFor(new Date(), r.sky.sun.sunset, r.sky.sun.civilDusk)} />
+            </Animated.View>
+          ),
+      )}
       <SafeAreaView style={styles.fill} edges={['top']}>
         {/* The city name on each page is the title; up here is just freshness and the page dots. */}
         <View style={styles.header}>
@@ -305,26 +337,30 @@ export default function TonightScreen() {
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           scrollEventThrottle={16}
-          onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: true })}
-          onMomentumScrollEnd={(e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / width))}
+          // The page follows the swipe as it passes halfway, not just when it settles, so a
+          // quick second swipe already finds the next city drawn.
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+            useNativeDriver: true,
+            listener: (e: { nativeEvent: { contentOffset: { x: number } } }) => setIndex(Math.round(e.nativeEvent.contentOffset.x / width)),
+          })}
           style={styles.fill}
         >
-          {cities.map((r) => (
-            <ScrollView
-              key={r.city.id}
-              style={{ width }}
-              contentContainerStyle={styles.content}
-              showsVerticalScrollIndicator={false}
-              refreshControl={<RefreshControl refreshing={loading && !!report} onRefresh={refresh} tintColor={colors.text} />}
-            >
-              <CityPage
-                r={r}
-                count={report?.activeCyclones.length ?? 0}
-                onOpen={(path) => router.push({ pathname: path, params: { city: r.city.id } })}
-              />
-              <Text style={styles.footer}>{t('dataSource')}</Text>
-            </ScrollView>
-          ))}
+          {cities.map((r, i) =>
+            near(i) ? (
+              <ScrollView
+                key={r.city.id}
+                style={{ width }}
+                contentContainerStyle={styles.content}
+                showsVerticalScrollIndicator={false}
+                refreshControl={<RefreshControl refreshing={loading && !!report} onRefresh={refresh} tintColor={colors.text} />}
+              >
+                <CityPage r={r} count={report?.activeCyclones.length ?? 0} onOpen={openScene} />
+                <Text style={styles.footer}>{t('dataSource')}</Text>
+              </ScrollView>
+            ) : (
+              <View key={r.city.id} style={{ width }} />
+            ),
+          )}
         </Animated.ScrollView>
       </SafeAreaView>
     </View>
@@ -364,7 +400,15 @@ const styles = StyleSheet.create({
   metricLabel: { fontSize: 11, letterSpacing: 0.4, color: 'rgba(245,243,255,0.5)' },
   metricValue: { fontSize: 17, fontWeight: '400', color: colors.text, fontVariant: ['tabular-nums'] },
   figureRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  figure: { fontSize: 80, lineHeight: 84, fontWeight: '100', letterSpacing: -3, color: colors.text, fontVariant: ['tabular-nums'] },
+  heroFigure: { fontSize: 120, lineHeight: 124, fontWeight: '100', letterSpacing: -5, color: colors.text, fontVariant: ['tabular-nums'] },
+  pair: { flexDirection: 'row', gap: spacing.md - 4 },
+  // Offsets are from the card body, which sits inside the card's 20pt padding.
+  radar: { position: 'absolute', right: -30, bottom: -55 },
+  radarClear: { marginRight: RADAR * 0.75 },
+  half: { flex: 1 },
+  // Square tiles: the picture on top, the verdict underneath.
+  tileArt: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  tileHeadline: { fontSize: 19, fontWeight: '600', letterSpacing: -0.3, color: colors.text },
   figureUnit: { fontSize: 18, fontWeight: '200', color: colors.textDim, marginTop: 10, marginLeft: 2 },
   compactFigure: { fontSize: 52, lineHeight: 56, fontWeight: '100', letterSpacing: -1.5, color: colors.text, fontVariant: ['tabular-nums'] },
   figureUnitSmall: { fontSize: 13, fontWeight: '300', color: colors.textDim, marginTop: 6, marginLeft: 3 },

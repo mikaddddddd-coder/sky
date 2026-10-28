@@ -1,13 +1,15 @@
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import Svg, { Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
 import { Text } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CloseButton } from '../components/CloseButton';
-import { Glass } from '../components/Glass';
+import { CloseButton, useCloseButtonClearance } from '../components/CloseButton';
 import { Rise } from '../components/Motion';
-import { SceneBackground, skyPhaseFor } from '../components/SceneBackground';
 import { SunArc } from '../components/SunArc';
+import { useSvgId } from '../components/useSvgId';
 import { colors, spacing, type } from '../constants/theme';
 import { dirKey, formatTime } from '../lib/format';
 import { useCityReport } from '../lib/report';
@@ -18,6 +20,14 @@ import { tzOffsetMinutes } from '../lib/sky/report';
 const GOLDEN = '#FFC27A';
 const BLUE = '#8FA8FF';
 const NIGHT = 'rgba(245,243,255,0.4)';
+const SUNSET = '#FF9A4D';
+
+// The page is one evening sky: blue up top, burning down through orange and red
+// into the dark the panel sits on.
+const SKY = ['#3B78BC', '#8E8A9A', '#E98A3C', '#C4492A', '#3A150C', '#120A08', '#0C0909'] as const;
+const SKY_STOPS = [0, 0.14, 0.27, 0.38, 0.52, 0.68, 1] as const;
+// The evening light bar runs from golden hour through sunset into blue hour.
+const EVENING = ['#2A1208', '#E8762F', '#F6B07A', '#7C8FC9', '#2E4E9A'] as const;
 
 type Row = { key: string; color: string; title: string; desc: string; time: string };
 
@@ -30,16 +40,36 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** Warm light pooled on the horizon under the sun's arc. */
+function HorizonGlow() {
+  const id = useSvgId('sunglow');
+  return (
+    <Svg style={StyleSheet.absoluteFill} viewBox="0 0 100 200" preserveAspectRatio="none">
+      <Defs>
+        <RadialGradient id={id} cx="50%" cy="50%" r="50%">
+          <Stop offset={0} stopColor="#FFB062" stopOpacity={0.75} />
+          <Stop offset={0.5} stopColor="#F07A35" stopOpacity={0.3} />
+          <Stop offset={1} stopColor="#F07A35" stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Ellipse cx={50} cy={62} rx={46} ry={26} fill={`url(#${id})`} />
+    </Svg>
+  );
+}
+
 export default function SunScene() {
   const { city } = useLocalSearchParams<{ city?: string }>();
   const r = useCityReport(city);
   const { t, lang } = useSettings();
+  const clearance = useCloseButtonClearance();
   const now = new Date();
   const day = useMemo(
     () => (r ? computeSunDay(r.city.latitude, r.city.longitude, new Date(), tzOffsetMinutes(r.city.timezone, new Date())) : null),
     [r],
   );
-  if (!r || !day) return <SceneBackground scene="golden" fadeIn />;
+
+  const sky = <LinearGradient colors={SKY} locations={SKY_STOPS} style={StyleSheet.absoluteFill} />;
+  if (!r || !day) return <View style={styles.root}>{sky}</View>;
 
   const time = (d: Date | null) => (d ? formatTime(d, r.city.timezone, lang) : '—');
   const range = (w: LightWindow) => (w ? `${time(w.start)} – ${time(w.end)}` : '—');
@@ -55,6 +85,11 @@ export default function SunScene() {
   const diff = t('sunDiff', { sign: diffS < 0 ? '−' : '+', m: Math.floor(Math.abs(diffS) / 60), s: Math.abs(diffS) % 60 });
   const bearing = (key: 'sunRiseDesc' | 'sunSetDesc', az: number | null) =>
     az === null ? '' : t(key, { dir: t(dirKey(az)), deg: Math.round(az) });
+
+  // Where now falls in the evening light, from the start of golden hour to the end of blue hour.
+  const eveStart = day.eveningGolden?.start ?? day.sunset;
+  const eveEnd = day.eveningBlue?.end ?? day.astronomicalDusk;
+  const eveProgress = eveStart && eveEnd ? (now.getTime() - eveStart.getTime()) / (eveEnd.getTime() - eveStart.getTime()) : -1;
 
   const rows: Row[] = [
     { key: 'dawn', color: NIGHT, title: t('sunAstroDawn'), desc: t('sunAstroDawnDesc'), time: time(day.astronomicalDawn) },
@@ -72,62 +107,84 @@ export default function SunScene() {
   const nextIndex = ends.findIndex((e) => !!e && e.getTime() >= now.getTime());
 
   return (
-    <View style={styles.fill}>
-      <SceneBackground scene={skyPhaseFor(now, r.sky.sun.sunset, r.sky.sun.civilDusk)} fadeIn />
+    <View style={styles.root}>
+      {sky}
+      <HorizonGlow />
       <SafeAreaView style={styles.fill} edges={['top']}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: clearance }]} showsVerticalScrollIndicator={false}>
           <Rise style={styles.header}>
-            <Text style={styles.title}>{t('sunTitle')}</Text>
-            <Text style={styles.titleDim}>
-              {r.city.name[lang]} · {date}
+            <Text style={styles.eyebrow}>
+              {t('sunTitle')} · {r.city.name[lang]} · {date}
             </Text>
           </Rise>
 
-          <Rise delay={120}>
-            <Glass>
-              {day.sunrise && day.sunset && <SunArc sunrise={day.sunrise} sunset={day.sunset} now={now} height={150} />}
-              <View style={styles.split}>
-                <View>
-                  <Text style={styles.sub}>{t('sunrise')}</Text>
-                  <Text style={styles.time}>{time(day.sunrise)}</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.sub}>{t('sunset')}</Text>
-                  <Text style={styles.time}>{time(day.sunset)}</Text>
-                </View>
-              </View>
-            </Glass>
+          <Rise delay={80} style={styles.arc}>
+            {day.sunrise && day.sunset && <SunArc sunrise={day.sunrise} sunset={day.sunset} now={now} height={170} />}
           </Rise>
 
-          <Rise delay={220}>
-            <Glass>
-              <View style={styles.stats}>
+          {/* Everything else reads from one panel, in layers: the sunset, the day in
+              numbers, the evening light, then the whole day's light. */}
+          <Rise delay={180}>
+            <View style={styles.panel}>
+              <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+              <LinearGradient colors={['rgba(60,20,10,0.12)', 'rgba(14,9,8,0.72)']} locations={[0, 0.35]} style={StyleSheet.absoluteFill} />
+
+              <View style={styles.block}>
+                <Text style={styles.panelTitle}>{t('sunTodaySunset')}</Text>
+                {!!bearing('sunSetDesc', day.sunsetAzimuth) && <Text style={styles.sub}>{bearing('sunSetDesc', day.sunsetAzimuth)}</Text>}
+                <Text style={styles.hero}>{time(day.sunset)}</Text>
+              </View>
+
+              <View style={styles.grid}>
+                <Stat label={t('sunrise')} value={time(day.sunrise)} />
                 <Stat label={t('sunDaylight')} value={t('sunDayLength', { h: Math.floor(mins / 60), m: mins % 60 })} />
                 <Stat label={t('sunVsYesterday')} value={diff} />
                 <Stat label={t('sunNoonAltitude')} value={`${Math.round(day.noonAltitude)}°`} />
               </View>
-            </Glass>
-          </Rise>
 
-          <Rise delay={320}>
-            <Glass>
-              <Text style={styles.section}>{t('sunLightTitle')}</Text>
-              {rows.map((row, i) => (
-                <View key={row.key} style={[styles.row, i < nextIndex && styles.rowPast]}>
-                  <View style={styles.rail}>
-                    <View style={[styles.dot, { backgroundColor: row.color }, i === nextIndex && styles.dotNext]} />
-                    {i < rows.length - 1 && <View style={styles.line} />}
+              <View style={styles.block}>
+                <Text style={styles.section}>{t('sunEveningLight')}</Text>
+                <View style={styles.bar}>
+                  <LinearGradient colors={EVENING} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+                  {eveProgress >= 0 && eveProgress <= 1 && <View style={[styles.marker, { left: `${eveProgress * 100}%` }]} />}
+                </View>
+                <View style={styles.eveTimes}>
+                  <View>
+                    <Text style={styles.statLabel}>{t('sunGoldenHour')}</Text>
+                    <Text style={styles.eveTime}>{time(day.eveningGolden?.start ?? null)}</Text>
                   </View>
-                  <View style={styles.rowText}>
-                    <View style={styles.rowHead}>
-                      <Text style={styles.rowTitle}>{row.title}</Text>
-                      <Text style={styles.rowTime}>{row.time}</Text>
-                    </View>
-                    {!!row.desc && <Text style={styles.sub}>{row.desc}</Text>}
+                  <View style={styles.center}>
+                    <Text style={styles.statLabel}>{t('sunset')}</Text>
+                    <Text style={[styles.eveTime, { color: SUNSET }]}>{time(day.sunset)}</Text>
+                  </View>
+                  <View style={styles.end}>
+                    <Text style={styles.statLabel}>{t('sunBlueHour')}</Text>
+                    <Text style={styles.eveTime}>{time(day.eveningBlue?.end ?? null)}</Text>
                   </View>
                 </View>
-              ))}
-            </Glass>
+              </View>
+
+              <View style={styles.divider} />
+
+              <View>
+                <Text style={[styles.section, styles.sectionGap]}>{t('sunLightTitle')}</Text>
+                {rows.map((row, i) => (
+                  <View key={row.key} style={[styles.row, i < nextIndex && styles.rowPast]}>
+                    <View style={styles.rail}>
+                      <View style={[styles.dot, { backgroundColor: row.color }, i === nextIndex && styles.dotNext]} />
+                      {i < rows.length - 1 && <View style={styles.line} />}
+                    </View>
+                    <View style={styles.rowText}>
+                      <View style={styles.rowHead}>
+                        <Text style={styles.rowTitle}>{row.title}</Text>
+                        <Text style={styles.rowTime}>{row.time}</Text>
+                      </View>
+                      {!!row.desc && <Text style={styles.sub}>{row.desc}</Text>}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
           </Rise>
         </ScrollView>
       </SafeAreaView>
@@ -136,20 +193,40 @@ export default function SunScene() {
   );
 }
 
+const textShadow = { textShadowColor: 'rgba(40,15,10,0.35)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 };
+
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#0C0909' },
   fill: { flex: 1 },
-  content: { padding: spacing.md, gap: spacing.md - 4, paddingBottom: 120 },
-  header: { paddingHorizontal: spacing.sm, paddingTop: spacing.sm, marginBottom: spacing.xs },
-  title: { ...type.largeTitle, color: colors.text },
-  titleDim: { ...type.title, fontWeight: '500', color: 'rgba(255,255,255,0.5)' },
-  split: { flexDirection: 'row', justifyContent: 'space-between' },
+  content: { padding: spacing.md },
+  header: { paddingHorizontal: spacing.sm, paddingTop: spacing.sm },
+  eyebrow: { ...type.body, fontWeight: '500', color: colors.text, ...textShadow },
+  arc: { marginTop: spacing.xl, marginBottom: spacing.sm },
+  panel: {
+    overflow: 'hidden',
+    borderRadius: 28,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.2)',
+    padding: spacing.lg,
+    gap: spacing.lg,
+  },
+  block: { gap: spacing.xs },
+  panelTitle: { ...type.title, color: colors.text },
+  hero: { fontSize: 68, lineHeight: 74, fontWeight: '300', letterSpacing: -2, color: '#FFFFFF', fontVariant: ['tabular-nums'], marginTop: spacing.xs },
   sub: { ...type.caption, color: colors.textDim, fontVariant: ['tabular-nums'] },
-  time: { fontSize: 28, fontWeight: '500', color: colors.text, fontVariant: ['tabular-nums'] },
-  stats: { flexDirection: 'row', justifyContent: 'space-between' },
-  stat: { gap: 4 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.md },
+  stat: { width: '50%', gap: 4 },
   statLabel: { ...type.caption, color: colors.textDim },
-  statValue: { fontSize: 17, fontWeight: '500', color: colors.text, fontVariant: ['tabular-nums'] },
-  section: { ...type.label, color: colors.textDim, marginBottom: spacing.xs },
+  statValue: { fontSize: 18, fontWeight: '500', color: colors.text, fontVariant: ['tabular-nums'] },
+  section: { ...type.label, color: colors.textDim },
+  sectionGap: { marginBottom: spacing.md },
+  bar: { height: 14, borderRadius: 7, overflow: 'hidden', marginTop: spacing.sm },
+  marker: { position: 'absolute', top: 1, width: 4, height: 12, marginLeft: -2, borderRadius: 2, backgroundColor: '#FFFFFF' },
+  eveTimes: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm },
+  center: { alignItems: 'center' },
+  end: { alignItems: 'flex-end' },
+  eveTime: { fontSize: 17, fontWeight: '500', color: colors.text, fontVariant: ['tabular-nums'], marginTop: 2 },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.16)' },
   row: { flexDirection: 'row', gap: spacing.md },
   rowPast: { opacity: 0.5 },
   rail: { width: 12, alignItems: 'center' },

@@ -12,6 +12,7 @@ export const SKY_GRADIENTS: Record<SkyPhase, readonly [string, string, ...string
 export const colors = {
   glassFill: 'rgba(255,255,255,0.10)',
   glassFillDark: 'rgba(20,16,40,0.28)',
+  glassFillAura: 'rgba(8,8,22,0.12)',
   glassBorder: 'rgba(255,255,255,0.24)',
   moonTime: '#F3D66B',
   text: '#F5F3FF',

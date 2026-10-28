@@ -2,9 +2,9 @@
 // a sparse star field (strongest at night, gone by day) and soft colour low in
 // the sky that follows the real light, so the frosted cards have something to
 // blur and pick up a tint from.
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
-import Svg, { Circle, Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, Ellipse, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 import type { SkyPhase } from '../constants/theme';
 import { SceneBackground } from './SceneBackground';
 import { useSvgId } from './useSvgId';
@@ -59,7 +59,7 @@ function makeStars(count: number): Star[] {
 
 const STARS = makeStars(120);
 
-export function TonightBackdrop({ phase }: { phase: SkyPhase }) {
+export const TonightBackdrop = memo(function TonightBackdrop({ phase }: { phase: SkyPhase }) {
   const [size, setSize] = useState({ w: 390, h: 844 });
   const onLayout = (e: LayoutChangeEvent) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height });
   const id = useSvgId('backdrop');
@@ -75,6 +75,10 @@ export function TonightBackdrop({ phase }: { phase: SkyPhase }) {
       <SceneBackground scene={phase} />
       <Svg width={w} height={h} style={StyleSheet.absoluteFill}>
         <Defs>
+          <LinearGradient id={`${id}-scrim`} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset={0} stopColor="#04050F" stopOpacity={0.35} />
+            <Stop offset={1} stopColor="#04050F" stopOpacity={0.7} />
+          </LinearGradient>
           {def.glows.map((g, i) => (
             <RadialGradient key={i} id={`${id}-g${i}`} cx="50%" cy="50%" r="50%">
               <Stop offset={0} stopColor={g.color} stopOpacity={g.opacity} />
@@ -82,6 +86,8 @@ export function TonightBackdrop({ phase }: { phase: SkyPhase }) {
             </RadialGradient>
           ))}
         </Defs>
+        {/* Dim the sky toward the bottom so the coloured cards stand out against it. */}
+        <Rect x={0} y={0} width={w} height={h} fill={`url(#${id}-scrim)`} />
         {def.glows.map((g, i) => (
           <Ellipse key={i} cx={g.cx * w} cy={g.cy * h} rx={g.rx * w} ry={g.ry * h} fill={`url(#${id}-g${i})`} />
         ))}
@@ -89,4 +95,4 @@ export function TonightBackdrop({ phase }: { phase: SkyPhase }) {
       </Svg>
     </View>
   );
-}
+});
