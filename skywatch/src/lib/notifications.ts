@@ -7,8 +7,8 @@ import { formatTime } from './format';
 import type { Lang, StringKey } from './i18n/strings';
 import type { Settings } from './settings';
 import type { TonightReport } from './sky/report';
+import { VIVID_THRESHOLD } from './sky/sunsetGlow';
 
-const GLOW_THRESHOLD = 55;
 const SKY_THRESHOLD = 70;
 // Alerts already sent or scheduled, keyed by kind, city and evening (or cyclone),
 // each with the time after which the record can be forgotten.
@@ -78,15 +78,17 @@ async function schedule(report: TonightReport, settings: Settings, lang: Lang, t
     const forgetAt = sunset.getTime() + DAY;
     const beforeSunset = sunset.getTime() > now;
 
-    // The glow forecast may already be for tomorrow's sunset, so it keys and times off its own.
+    // Only a glow expected to be vivid is worth a nudge; an ordinary dusk is not.
+    // The forecast may already be for tomorrow's sunset, so it keys and times off its own.
     const glowSunset = r.glowSunset;
-    if (glowSunset.getTime() > now && settings.alerts.glow && r.glow && r.glow.score >= GLOW_THRESHOLD) {
+    const vivid = r.glow?.vividness ?? null;
+    if (glowSunset.getTime() > now && settings.alerts.glow && r.glow && vivid !== null && vivid >= VIVID_THRESHOLD) {
       await alert(
         `glow:${r.city.id}:${glowSunset.toISOString().slice(0, 10)}`,
         new Date(glowSunset.getTime() - 2 * 3600_000),
         glowSunset.getTime() + DAY,
         t('notifGlowTitle', { city }),
-        t('notifGlowBody', { pct: r.glow.score, time: formatTime(glowSunset, r.city.timezone, lang) }),
+        t('notifGlowBody', { vivid, pct: r.glow.score, time: formatTime(glowSunset, r.city.timezone, lang) }),
       );
     }
 

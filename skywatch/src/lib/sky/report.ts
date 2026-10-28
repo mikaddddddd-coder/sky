@@ -1,9 +1,9 @@
 import { fetchActiveCyclones, nearestCyclone, type Cyclone, type CycloneNear } from '../api/typhoon';
-import { fetchPointForecasts, type PointForecast } from '../api/openMeteo';
+import { fetchCanvasClouds, fetchPointForecasts, type PointForecast } from '../api/openMeteo';
 import { destinationPoint } from '../geo';
 import type { City } from '../../constants/cities';
 import { computeEveningSky, type EveningSky } from './astro';
-import { glowFromForecasts, type GlowForecast } from './sunsetGlow';
+import { glowFromForecasts, RAY_KM, type GlowForecast } from './sunsetGlow';
 
 // How far toward the sunset we sample low clouds; the sun lights the clouds
 // above you through roughly this much atmosphere.
@@ -81,8 +81,12 @@ export async function buildTonightReport(cities: City[], now = new Date()): Prom
     destinationPoint(c.latitude, c.longitude, glowSuns[i].sun.sunsetAzimuth, WEST_SAMPLE_KM),
   ]);
 
-  const [forecasts, cyclones] = await Promise.all([
+  // Clouds out along each city's sunset direction, for how vivid the glow would be.
+  const rayPoints = cities.flatMap((c, i) => RAY_KM.map((km) => destinationPoint(c.latitude, c.longitude, glowSuns[i].sun.sunsetAzimuth, km)));
+
+  const [forecasts, rays, cyclones] = await Promise.all([
     fetchPointForecasts(points).catch((e: Error) => e),
+    fetchCanvasClouds(rayPoints).catch(() => null),
     fetchActiveCyclones(now).catch(() => [] as Cyclone[]),
   ]);
 
@@ -95,7 +99,7 @@ export async function buildTonightReport(cities: City[], now = new Date()): Prom
     if (forecasts instanceof Error) return { ...base, glow: null, today: null, error: forecasts.message };
     return {
       ...base,
-      glow: glowFromForecasts(forecasts[i * 2], forecasts[i * 2 + 1], glowSun.sunset),
+      glow: glowFromForecasts(forecasts[i * 2], forecasts[i * 2 + 1], glowSun.sunset, rays && rays.slice(i * RAY_KM.length, (i + 1) * RAY_KM.length)),
       today: dayRange(forecasts[i * 2], now, tzOffsetMinutes(city.timezone, now)),
     };
   });

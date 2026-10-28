@@ -5,6 +5,7 @@ import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Glass, type Aura } from '../../components/Glass';
 import { GlowOrb } from '../../components/GlowOrb';
+import { aodLevel, vividLevel } from '../../lib/sky/sunsetGlow';
 import { MoonDisc } from '../../components/MoonDisc';
 import { Rise, useCountUp } from '../../components/Motion';
 import { skyPhaseFor } from '../../components/SceneBackground';
@@ -103,7 +104,6 @@ function CityHeader({ r }: { r: CityReport }) {
 function GlowCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
   const { t } = useSettings();
   const g = r.glow;
-  const pct = (v: number) => `${Math.round(v)}%`;
   const shown = useCountUp(g?.score ?? 0);
   const aura: Aura = g
     ? { color: GLOW_AURA[g.level], x: 0.8, y: 0.95, strength: 0.2 + (0.2 * g.score) / 100 }
@@ -117,8 +117,9 @@ function GlowCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
             <>
               <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={[styles.headline, { color: LEVEL_COLOR[g.level] }]}>{t(`glowLevel_${g.level}`)}</Text>
               <View style={styles.metrics}>
-                <Metric label={t('metricLowCloud')} value={pct(g.inputs.localLow)} />
-                <Metric label={t('metricHighCloud')} value={`${pct(g.inputs.localMid)} / ${pct(g.inputs.localHigh)}`} />
+                {/* How red it would get, and how clear the air is. */}
+                <Metric label={t('glowVividness')} value={g.vividness == null ? '—' : `${g.vividness} ${t(`vivid_${vividLevel(g.vividness)}`)}`} />
+                <Metric label={t('glowAod')} value={g.inputs.aod == null ? '—' : `${g.inputs.aod.toFixed(2)} ${t(`aod_${aodLevel(g.inputs.aod)}`)}`} />
               </View>
             </>
           ) : (

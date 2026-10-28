@@ -122,3 +122,20 @@ export async function fetchNightWeather(latitude: number, longitude: number): Pr
     precipProbability: h.precipitation_probability,
   };
 }
+
+export type CanvasClouds = { time: number[]; high: number[]; mid: number[] };
+
+type CanvasResponse = { hourly: { time: number[]; cloud_cover_high: number[]; cloud_cover_mid: number[] } };
+
+/** High and mid cloud only, for many points in one request: the clouds out along the sunset direction. */
+export async function fetchCanvasClouds(points: { latitude: number; longitude: number }[]): Promise<CanvasClouds[]> {
+  const lat = points.map((p) => p.latitude.toFixed(3)).join(',');
+  const lon = points.map((p) => p.longitude.toFixed(3)).join(',');
+  const url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&timeformat=unixtime&past_days=1&forecast_days=2&hourly=cloud_cover_high,cloud_cover_mid`;
+  const data = await getJson<CanvasResponse | CanvasResponse[]>(url, 30_000);
+  return (Array.isArray(data) ? data : [data]).map(({ hourly: h }) => ({
+    time: h.time.map((t) => t * 1000),
+    high: h.cloud_cover_high,
+    mid: h.cloud_cover_mid,
+  }));
+}

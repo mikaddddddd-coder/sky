@@ -7,7 +7,8 @@ import { CloseButton, useCloseButtonClearance } from '../components/CloseButton'
 import { LinearGradient } from 'expo-linear-gradient';
 import { GlowSky } from '../components/GlowSky';
 import { easeOut, Rise, useCountUp } from '../components/Motion';
-import { Panel } from '../components/Panel';
+import { Panel, PanelStat } from '../components/Panel';
+import { aodLevel, vividLevel } from '../lib/sky/sunsetGlow';
 import { colors, spacing, type } from '../constants/theme';
 import { formatTime } from '../lib/format';
 import { useCityReport } from '../lib/report';
@@ -111,6 +112,18 @@ export default function GlowScene() {
                     <Text style={styles.sub}>{t('glowScale')}</Text>
                   </View>
 
+                  {/* How vivid it would be, beside the chance of it happening. */}
+                  <View style={styles.grid}>
+                    <PanelStat label={t('glowVividness')} value={g.vividness == null ? '—' : `${g.vividness} · ${t(`vivid_${vividLevel(g.vividness)}`)}`} />
+                    <PanelStat label={t('glowAod')} value={g.inputs.aod == null ? '—' : `${g.inputs.aod.toFixed(2)} · ${t(`aod_${aodLevel(g.inputs.aod)}`)}`} />
+                    <PanelStat
+                      label={t('glowEdge')}
+                      value={
+                        g.edgeKm == null ? '—' : g.edgeKm === 0 ? t('glowEdgeNone') : g.edgeKm >= 500 ? t('glowEdgeFar') : t('glowEdgeKm', { km: g.edgeKm })
+                      }
+                    />
+                  </View>
+
                   <View style={styles.block}>
                     <Text style={styles.section}>{t('glowDetailTitle')}</Text>
                     <View style={styles.reasons}>
@@ -135,6 +148,7 @@ export default function GlowScene() {
 
                   <View style={styles.divider} />
 
+                  <Text style={styles.method}>{t('glowVividNote')}</Text>
                   <Text style={styles.method}>{t('glowMethod')}</Text>
                 </Panel>
               </Rise>
@@ -161,6 +175,7 @@ const styles = StyleSheet.create({
   sub: { ...type.caption, color: colors.textDim, fontVariant: ['tabular-nums'] },
   figureRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: spacing.xs },
   chance: { fontSize: 15, fontWeight: '500', color: colors.text },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.md },
   hero: { fontSize: 68, lineHeight: 74, fontWeight: '300', letterSpacing: -2, color: '#FFFFFF', fontVariant: ['tabular-nums'] },
   unit: { fontSize: 24, fontWeight: '300', color: colors.textDim, marginTop: 10, marginLeft: 4 },
   section: { ...type.label, color: colors.textDim },

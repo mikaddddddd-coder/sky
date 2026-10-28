@@ -137,7 +137,7 @@ export default function MoonScene() {
   const time = (d: Date | null) => (d ? formatTime(d, r.city.timezone, lang) : '—');
   const dateFmt = (d: Date, opts: Intl.DateTimeFormatOptions) =>
     new Intl.DateTimeFormat(lang === 'zh' ? 'zh-CN' : 'en-US', { timeZone: r.city.timezone, ...opts }).format(d);
-  const dayLabel = dateFmt(viewAt(offset), { month: 'long', day: 'numeric', weekday: 'short' });
+  const dayLabel = dateFmt(viewAt(offset), { month: 'short', day: 'numeric', weekday: 'short' });
   const relative =
     offset === 0
       ? t('moonToday')
@@ -173,8 +173,8 @@ export default function MoonScene() {
 
       <SafeAreaView style={styles.fill}>
         <Rise style={styles.header}>
-          <Text style={styles.eyebrow}>
-            {r.city.name[lang]} · {dayLabel}
+          <Text style={panelText.eyebrow}>
+            {t('moonTitle')} · {r.city.name[lang]} · {dayLabel}
           </Text>
           <View style={styles.pill}>
             <Text style={styles.pillText}>{relative}</Text>
@@ -248,8 +248,8 @@ export default function MoonScene() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  eyebrow: { fontSize: 15, fontWeight: '500', letterSpacing: 0.3, color: 'rgba(255,255,255,0.62)' },
+  // Same spacing as the other scenes' headers.
+  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   pill: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 13, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(243,214,107,0.6)' },
   pillText: { fontSize: 13, fontWeight: '600', color: colors.moonTime },
   hero: { flex: 1, alignItems: 'center', justifyContent: 'center' },
