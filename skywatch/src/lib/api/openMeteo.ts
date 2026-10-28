@@ -1,4 +1,6 @@
 // Open-Meteo: free, no API key. https://open-meteo.com/en/docs
+import { getJson } from './http';
+
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const AIR_URL = 'https://air-quality-api.open-meteo.com/v1/air-quality';
 
@@ -43,11 +45,6 @@ const HOURLY_VARS = [
   'precipitation_probability',
 ].join(',');
 
-async function getJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return (await res.json()) as T;
-}
 
 /** Fetches hourly forecasts for several points in one request each (Open-Meteo accepts comma-separated coords). */
 export async function fetchPointForecasts(points: { latitude: number; longitude: number }[]): Promise<PointForecast[]> {
@@ -56,8 +53,9 @@ export async function fetchPointForecasts(points: { latitude: number; longitude:
   const common = `latitude=${lat}&longitude=${lon}&timeformat=unixtime&past_days=1&forecast_days=2`;
 
   const [weather, air] = await Promise.all([
-    getJson<ForecastResponse | ForecastResponse[]>(`${FORECAST_URL}?${common}&hourly=${HOURLY_VARS}`),
-    getJson<AirResponse | AirResponse[]>(`${AIR_URL}?${common}&hourly=aerosol_optical_depth`).catch(() => null),
+    getJson<ForecastResponse | ForecastResponse[]>(`${FORECAST_URL}?${common}&hourly=${HOURLY_VARS}`, 30_000),
+    // Haze only fine-tunes the score, so a slow answer is not worth waiting for.
+    getJson<AirResponse | AirResponse[]>(`${AIR_URL}?${common}&hourly=aerosol_optical_depth`, 12_000).catch(() => null),
   ]);
 
   const weatherList = Array.isArray(weather) ? weather : [weather];

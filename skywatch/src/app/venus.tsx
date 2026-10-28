@@ -4,25 +4,17 @@ import { Text } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseButton, useCloseButtonClearance } from '../components/CloseButton';
 import { Rise } from '../components/Motion';
+import { Panel, PanelStat, panelText } from '../components/Panel';
 import { VenusSky } from '../components/VenusSky';
-import { colors, spacing, type } from '../constants/theme';
+import { colors, spacing } from '../constants/theme';
 import { dirKey, formatTime } from '../lib/format';
-import type { StringKey } from '../lib/i18n/strings';
 import { useCityReport } from '../lib/report';
 import { useSettings } from '../lib/settings';
 
 const SHEET = '#0B0A18';
+const LEVEL_COLOR = { excellent: colors.good, good: '#FFC39A', fair: colors.text, poor: colors.text } as const;
 // Typographic minus so negative altitudes don't read as a hyphen.
 const signed = (n: number) => `${Math.round(n)}`.replace('-', '−');
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
-    </View>
-  );
-}
 
 export default function VenusScene() {
   const { city } = useLocalSearchParams<{ city?: string }>();
@@ -32,8 +24,15 @@ export default function VenusScene() {
   const morning = v?.visibility === 'morning';
   const clearance = useCloseButtonClearance();
 
+  const date =
+    r &&
+    new Intl.DateTimeFormat(lang === 'zh' ? 'zh-CN' : 'en-US', { timeZone: r.city.timezone, month: 'short', day: 'numeric', weekday: 'short' }).format(
+      new Date(),
+    );
+
   return (
-    <View style={styles.fill}>
+    <View style={styles.root}>
+      {/* The sky keeps its own frame, so Venus sits where the drawing puts its horizon. */}
       <View style={styles.sky}>
         {v && (
           <VenusSky
@@ -44,54 +43,54 @@ export default function VenusScene() {
           />
         )}
         <SafeAreaView edges={['top']} style={styles.skyText}>
-          {v && (
+          {r && v && (
             <Rise delay={150}>
-              <Text style={styles.eyebrow}>{t(morning ? 'venusEyebrowMorning' : 'venusEyebrowEvening')}</Text>
-              <Text style={styles.title}>{t('venusTitle')}</Text>
+              <Text style={panelText.eyebrow}>
+                {t('venusTitle')} · {r.city.name[lang]} · {date}
+              </Text>
             </Rise>
           )}
         </SafeAreaView>
       </View>
 
-      <View style={styles.sheet}>
-        {r && v && (
-          <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: clearance }]} showsVerticalScrollIndicator={false}>
-            <Rise delay={250}>
-              <Text style={styles.headline}>{t(`venus_highlight_${v.highlight}`)}</Text>
-            </Rise>
-            <Rise delay={380} style={styles.grid}>
-              <Stat label={t('venusBestTime')} value={formatTime(v.bestTime, r.city.timezone, lang)} />
-              <Stat label={t('venusAltitude')} value={`${signed(v.altitudeAtBest)}°`} />
-              <Stat label={t('venusDirection')} value={t(dirKey(v.azimuthAtBest))} />
-              <Stat label={t('venusBrightness')} value={v.magnitude.toFixed(1).replace('-', '−')} />
-              <Stat label={t('venusPhase')} value={`${Math.round(v.phaseFraction * 100)}%`} />
-              <Stat label={t('venusElongation')} value={`${Math.round(v.elongation)}°`} />
-            </Rise>
-            <Rise delay={480}>
-              <Text style={styles.tip}>{t('venusTip')}</Text>
-            </Rise>
-          </ScrollView>
-        )}
-      </View>
+      {r && v && (
+        <Rise delay={200} style={[styles.panelWrap, { marginBottom: clearance - spacing.md }]}>
+          <Panel tint={['rgba(40,30,80,0.14)', 'rgba(10,9,24,0.78)']} style={styles.panel}>
+            <ScrollView contentContainerStyle={styles.panelContent} showsVerticalScrollIndicator={false}>
+              <View style={panelText.block}>
+                <Text style={[panelText.title, { color: LEVEL_COLOR[v.level] }]}>{t(`venusLevel_${v.level}`)}</Text>
+                <Text style={panelText.sub}>{t(morning ? 'venusEyebrowMorning' : 'venusEyebrowEvening')}</Text>
+                <Text style={panelText.hero}>{formatTime(v.bestTime, r.city.timezone, lang)}</Text>
+                <Text style={panelText.sub}>
+                  {t('venusBestTime')} · {t(`venus_highlight_${v.highlight}`)}
+                </Text>
+              </View>
+
+              <View style={panelText.grid}>
+                <PanelStat label={t('venusAltitude')} value={`${signed(v.altitudeAtBest)}°`} />
+                <PanelStat label={t('venusDirection')} value={t(dirKey(v.azimuthAtBest))} />
+                <PanelStat label={t('venusBrightness')} value={v.magnitude.toFixed(1).replace('-', '−')} />
+                <PanelStat label={t('venusPhase')} value={`${Math.round(v.phaseFraction * 100)}%`} />
+                <PanelStat label={t('venusElongation')} value={`${Math.round(v.elongation)}°`} />
+              </View>
+
+              <View style={panelText.divider} />
+              <Text style={panelText.note}>{t('venusTip')}</Text>
+            </ScrollView>
+          </Panel>
+        </Rise>
+      )}
       <CloseButton />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, backgroundColor: SHEET },
+  root: { flex: 1, backgroundColor: SHEET },
   sky: { flex: 1, minHeight: 240, overflow: 'hidden' },
   skyText: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
-  eyebrow: { ...type.caption, color: 'rgba(255,255,255,0.7)' },
-  title: { ...type.largeTitle, color: colors.text, marginTop: 2 },
-  // Sized to its content, so the close button always has room below the text.
-  sheet: { maxHeight: '62%', backgroundColor: SHEET },
-  scroll: { flexGrow: 0 },
-  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, gap: spacing.md },
-  headline: { fontSize: 22, lineHeight: 30, fontWeight: '600', letterSpacing: -0.3, color: colors.text },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: spacing.md },
-  stat: { width: '33.33%', gap: 2 },
-  statLabel: { ...type.caption, color: colors.textDim },
-  statValue: { fontSize: 22, fontWeight: '300', color: colors.text, fontVariant: ['tabular-nums'] },
-  tip: { ...type.caption, color: colors.textDim },
+  // Sized to its content up to a cap, so the sky above always keeps room.
+  panelWrap: { maxHeight: '58%', marginHorizontal: spacing.md, marginTop: -spacing.xl },
+  panel: { padding: 0, gap: 0, flexShrink: 1 },
+  panelContent: { padding: spacing.lg, gap: spacing.lg },
 });

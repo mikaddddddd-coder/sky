@@ -1,20 +1,20 @@
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../components/Text';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CloseButton, useCloseButtonClearance } from '../components/CloseButton';
+import { LinearGradient } from 'expo-linear-gradient';
 import { GlowSky } from '../components/GlowSky';
 import { easeOut, Rise, useCountUp } from '../components/Motion';
+import { Panel } from '../components/Panel';
 import { colors, spacing, type } from '../constants/theme';
 import { formatTime } from '../lib/format';
 import { useCityReport } from '../lib/report';
 import { useSettings } from '../lib/settings';
 
 const POSITIVE = new Set(['canvas', 'clearWest', 'afterRain', 'clean']);
-const SHEET = '#1A1322';
+const SHEET = '#140C14';
 
 function Bar({ label, value, delay }: { label: string; value: number; delay: number }) {
   const grow = useRef(new Animated.Value(0)).current;
@@ -42,8 +42,9 @@ export default function GlowScene() {
   const clearance = useCloseButtonClearance();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
-  // The sun sits just above the panel's top edge, wherever the panel ends up.
   const [panelTop, setPanelTop] = useState(height * 0.4);
+  // Where the panel's top edge sits on screen.
+  const horizon = panelTop + insets.top;
 
   const date =
     r &&
@@ -52,12 +53,13 @@ export default function GlowScene() {
       month: 'short',
       day: 'numeric',
       weekday: 'short',
-    }).format(new Date());
+    }).format(r.glowSunset);
 
   return (
     <View style={styles.root}>
+      {/* The live sky, with the sun resting just above the panel's top edge. */}
       <GlowSky
-        horizon={Math.min(0.8, (panelTop + insets.top + 20) / height)}
+        horizon={Math.min(0.8, (horizon + 20) / height)}
         weather={
           g
             ? {
@@ -70,6 +72,13 @@ export default function GlowScene() {
               }
             : undefined
         }
+      />
+      {/* Below the horizon the sky sinks into night, as on the sun page, so the panel settles into the dark. */}
+      <LinearGradient
+        colors={['rgba(20,12,20,0)', 'rgba(20,12,20,0.85)', SHEET]}
+        locations={[Math.max(0, horizon / height - 0.04), Math.min(0.98, horizon / height + 0.12), Math.min(1, horizon / height + 0.24)]}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
       />
       <SafeAreaView style={styles.fill} edges={['top']}>
         {r && g && (
@@ -86,23 +95,24 @@ export default function GlowScene() {
             {/* One panel, in layers: tonight's odds, why, the clouds behind it, then how it's worked out. */}
             <View onLayout={(e) => setPanelTop(e.nativeEvent.layout.y)}>
               <Rise delay={180}>
-                <View style={styles.panel}>
-                  <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
-                  <LinearGradient colors={['rgba(70,26,44,0.12)', 'rgba(20,12,20,0.74)']} locations={[0, 0.35]} style={StyleSheet.absoluteFill} />
+                <Panel tint={['rgba(90,26,12,0.12)', 'rgba(18,10,16,0.8)']}>
 
                   <View style={styles.block}>
-                    <Text style={styles.panelTitle}>{t('glowDetailLead', { city: r.city.name[lang] })}</Text>
+                    <Text style={styles.panelTitle}>{t(r.glowTomorrow ? 'glowDetailLeadTomorrow' : 'glowDetailLead', { city: r.city.name[lang] })}</Text>
                     <Text style={styles.sub}>
-                      {t(`glowLevel_${g.level}`)} · {t('sunset')} {formatTime(r.sky.sun.sunset, r.city.timezone, lang)}
+                      {t(`glowLevel_${g.level}`)} · {t('sunset')} {formatTime(r.glowSunset, r.city.timezone, lang)}
                     </Text>
                     <View style={styles.figureRow}>
                       <Text style={styles.hero}>{shown}</Text>
                       <Text style={styles.unit}>%</Text>
                     </View>
+                    {/* Say plainly what the number is, and how to read it. */}
+                    <Text style={styles.chance}>{t(r.glowTomorrow ? 'glowChanceTomorrow' : 'glowChanceTonight')}</Text>
+                    <Text style={styles.sub}>{t('glowScale')}</Text>
                   </View>
 
                   <View style={styles.block}>
-                    <Text style={styles.section}>{t('glowDetailTitle', { pct: g.score })}</Text>
+                    <Text style={styles.section}>{t('glowDetailTitle')}</Text>
                     <View style={styles.reasons}>
                       {g.reasons.map((reason, i) => (
                         <Rise key={reason} delay={350 + i * 90} style={styles.reason}>
@@ -126,7 +136,7 @@ export default function GlowScene() {
                   <View style={styles.divider} />
 
                   <Text style={styles.method}>{t('glowMethod')}</Text>
-                </View>
+                </Panel>
               </Rise>
             </View>
           </ScrollView>
@@ -146,18 +156,11 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing.sm, paddingTop: spacing.sm },
   eyebrow: { ...type.body, fontWeight: '500', color: colors.text, ...textShadow },
   skyGap: { height: 220 },
-  panel: {
-    overflow: 'hidden',
-    borderRadius: 28,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.2)',
-    padding: spacing.lg,
-    gap: spacing.lg,
-  },
   block: { gap: spacing.xs },
   panelTitle: { ...type.title, color: colors.text },
   sub: { ...type.caption, color: colors.textDim, fontVariant: ['tabular-nums'] },
   figureRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: spacing.xs },
+  chance: { fontSize: 15, fontWeight: '500', color: colors.text },
   hero: { fontSize: 68, lineHeight: 74, fontWeight: '300', letterSpacing: -2, color: '#FFFFFF', fontVariant: ['tabular-nums'] },
   unit: { fontSize: 24, fontWeight: '300', color: colors.textDim, marginTop: 10, marginLeft: 4 },
   section: { ...type.label, color: colors.textDim },

@@ -76,15 +76,17 @@ async function schedule(report: TonightReport, settings: Settings, lang: Lang, t
     const sunset = r.sky.sun.sunset;
     const evening = `${r.city.id}:${sunset.toISOString().slice(0, 10)}`;
     const forgetAt = sunset.getTime() + DAY;
-
     const beforeSunset = sunset.getTime() > now;
-    if (beforeSunset && settings.alerts.glow && r.glow && r.glow.score >= GLOW_THRESHOLD) {
+
+    // The glow forecast may already be for tomorrow's sunset, so it keys and times off its own.
+    const glowSunset = r.glowSunset;
+    if (glowSunset.getTime() > now && settings.alerts.glow && r.glow && r.glow.score >= GLOW_THRESHOLD) {
       await alert(
-        `glow:${evening}`,
-        new Date(sunset.getTime() - 2 * 3600_000),
-        forgetAt,
+        `glow:${r.city.id}:${glowSunset.toISOString().slice(0, 10)}`,
+        new Date(glowSunset.getTime() - 2 * 3600_000),
+        glowSunset.getTime() + DAY,
         t('notifGlowTitle', { city }),
-        t('notifGlowBody', { pct: r.glow.score, time: formatTime(sunset, r.city.timezone, lang) }),
+        t('notifGlowBody', { pct: r.glow.score, time: formatTime(glowSunset, r.city.timezone, lang) }),
       );
     }
 

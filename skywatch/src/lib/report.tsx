@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { findCity, HERE_ID, type City } from '../constants/cities';
 import { distanceKm } from './geo';
@@ -15,6 +16,22 @@ type ReportContextValue = {
 
 const ReportContext = createContext<ReportContextValue | null>(null);
 
+// The last report is kept on the device so the app opens straight onto it
+// while a fresh one loads; "updated at" says how old it is.
+const CACHE_KEY = 'skywatch.report.v1';
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+const reviveDates = (_key: string, v: unknown) => (typeof v === 'string' && ISO_DATE.test(v) ? new Date(v) : v);
+
+function keepForecasts(next: TonightReport, prev: TonightReport): TonightReport {
+  return {
+    ...next,
+    cities: next.cities.map((c) => {
+      const old = c.error ? prev.cities.find((p) => p.city.id === c.city.id && !p.error) : undefined;
+      return old ? { ...c, glow: old.glow, today: old.today, glowSunset: old.glowSunset, glowTomorrow: old.glowTomorrow, error: undefined } : c;
+    }),
+  };
+}
+
 // One shared report so the Tonight list and the detail scenes show the same numbers.
 export function ReportProvider({ children }: { children: ReactNode }) {
   const { settings, update, lang, t } = useSettings();
@@ -30,7 +47,10 @@ export function ReportProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const next = await buildTonightReport(cities);
-      setReport(next);
+      // A city whose forecast failed keeps the forecast it already had, rather than
+      // swapping good numbers for an error; only a clean report is saved.
+      setReport((prev) => (prev ? keepForecasts(next, prev) : next));
+      if (!next.cities.some((c) => c.error)) AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ cityKey, report: next })).catch(() => {});
       scheduleTonightAlerts(next, settings, lang, t).catch(() => {});
     } catch (e) {
       setError((e as Error).message);
@@ -39,6 +59,17 @@ export function ReportProvider({ children }: { children: ReactNode }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cityKey, settings.alerts, lang]);
+
+  // Show the saved report for these cities until the network answers; never over a fresher one.
+  useEffect(() => {
+    AsyncStorage.getItem(CACHE_KEY)
+      .then((raw) => {
+        if (!raw) return;
+        const saved = JSON.parse(raw, reviveDates) as { cityKey: string; report: TonightReport };
+        if (saved.cityKey === cityKey) setReport((prev) => prev ?? saved.report);
+      })
+      .catch(() => {});
+  }, [cityKey]);
 
   useEffect(() => {
     refresh();

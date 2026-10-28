@@ -5,10 +5,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
-import { CloseButton } from '../components/CloseButton';
+import { CloseButton, useCloseButtonClearance } from '../components/CloseButton';
 import { MoonPhaseIcon } from '../components/Icons';
 import { MoonDisc } from '../components/MoonDisc';
 import { Rise } from '../components/Motion';
+import { Panel, PanelStat, panelText } from '../components/Panel';
 import { Fog, NightClouds, useFade } from '../components/NightWeather';
 import { StarSky } from '../components/StarSky';
 import { useSvgId } from '../components/useSvgId';
@@ -30,17 +31,6 @@ const clamp = (n: number) => Math.max(-RANGE, Math.min(RANGE, n));
 const CLOUD_BAND: [number, number] = [0.05, 0.6];
 const FRONT_BAND: [number, number] = [0.15, 0.75];
 const FRONT_THICKNESS: [number, number] = [0.16, 0.34];
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
-        {value}
-      </Text>
-    </View>
-  );
-}
 
 /** The moon with whatever weather sits in front of it: a fog halo, passing cloud, and blur. */
 function MoonStage({ size, illumination, waxing, clarity }: { size: number; illumination: number; waxing: boolean; clarity: MoonClarity | null }) {
@@ -83,6 +73,7 @@ export default function MoonScene() {
   const { t, lang } = useSettings();
   const { width, height } = useWindowDimensions();
   const weather = useNightWeather(r?.city);
+  const clearance = useCloseButtonClearance();
   const [heroH, setHeroH] = useState(0);
   const moonSize = heroH ? Math.max(160, Math.min(290, heroH - 40, width * 0.68)) : 0;
 
@@ -173,7 +164,6 @@ export default function MoonScene() {
 
   const moonX = drag.interpolate({ inputRange: [-300, 300], outputRange: [-70, 70], extrapolate: 'clamp' });
   const tilt = drag.interpolate({ inputRange: [-300, 300], outputRange: ['-6deg', '6deg'], extrapolate: 'clamp' });
-  const zh = lang === 'zh';
 
   return (
     <View style={styles.fill}>
@@ -202,48 +192,54 @@ export default function MoonScene() {
           )}
         </View>
 
-        <Rise delay={600} style={styles.titleBlock}>
-          <Text style={[styles.phase, zh && styles.phaseZh]}>{t(`phase_${look.phaseName}`)}</Text>
-          <Text style={[styles.verdict, !fresh && styles.stale]}>{verdict}</Text>
-        </Rise>
+        {/* Everything about the chosen evening, on one panel under the moon. */}
+        <Rise delay={600} style={[styles.panelWrap, { marginBottom: clearance - spacing.md }]}>
+          <Panel tint={['rgba(30,34,70,0.14)', 'rgba(8,9,20,0.8)']} style={styles.panel}>
+            <View style={[panelText.block, !fresh && styles.stale]}>
+              <Text style={panelText.title}>{t(`phase_${look.phaseName}`)}</Text>
+              <Text style={panelText.sub}>{verdict}</Text>
+            </View>
 
-        <Rise delay={750} style={[styles.stats, !fresh && styles.stale]}>
-          <Stat label={t('moonrise_label')} value={time(fullMoon.moonrise)} />
-          <Stat label={t('moonset_label')} value={time(fullMoon.moonset)} />
-          <Stat label={t('moonLit')} value={`${Math.round(look.illumination * 100)}%`} />
-          <Stat label={t('moonClarity')} value={clarity ? t(`clarity_${clarity.level}`) : '—'} />
-        </Rise>
-        <Text style={styles.footnote}>
-          {clarity ? `${t('moonViewAround', { time: time(clarity.at) })} · ${t('moonClarity')} ${clarity.score}` : weather ? t('moonNoForecast') : ' '}
-        </Text>
+            <View style={[panelText.grid, !fresh && styles.stale]}>
+              <PanelStat label={t('moonrise_label')} value={time(fullMoon.moonrise)} />
+              <PanelStat label={t('moonset_label')} value={time(fullMoon.moonset)} />
+              <PanelStat label={t('moonLit')} value={`${Math.round(look.illumination * 100)}%`} />
+              <PanelStat label={t('moonClarity')} value={clarity ? t(`clarity_${clarity.level}`) : '—'} />
+            </View>
 
-        <Rise delay={900} style={styles.strip}>
-          {[-3, -2, -1, 0, 1, 2, 3].map((d) => {
-            const n = offset + d;
-            const p = moonPhaseAt(viewAt(n));
-            const on = d === 0;
-            return (
-              <Pressable key={d} onPress={() => go(n)} style={[styles.day, on && styles.dayOn]} hitSlop={4}>
-                <MoonPhaseIcon size={on ? 20 : 16} color={on ? colors.text : colors.textDim} illumination={p.illumination} waxing={p.waxing} />
-                <Text style={[styles.dayNum, on && styles.dayNumOn]}>{dateFmt(viewAt(n), { day: 'numeric' })}</Text>
-              </Pressable>
-            );
-          })}
-        </Rise>
+            <View style={panelText.divider} />
 
-        <View style={styles.under}>
-          {offset !== 0 ? (
-            <Pressable onPress={() => go(0)} style={styles.today} accessibilityRole="button">
-              <Text style={styles.todayText}>{t('moonBackToday')}</Text>
-            </Pressable>
-          ) : (
-            <Text style={styles.footnote}>
-              {swiped
-                ? `${t('moonNextFull', { date: shortDate(upcoming.full) })}  ·  ${t('moonNextNew', { date: shortDate(upcoming.new) })}`
-                : `‹  ${t('moonSwipeHint')}  ›`}
-            </Text>
-          )}
-        </View>
+            <View style={styles.strip}>
+              {[-3, -2, -1, 0, 1, 2, 3].map((d) => {
+                const n = offset + d;
+                const p = moonPhaseAt(viewAt(n));
+                const on = d === 0;
+                return (
+                  <Pressable key={d} onPress={() => go(n)} style={[styles.day, on && styles.dayOn]} hitSlop={4}>
+                    <MoonPhaseIcon size={on ? 20 : 16} color={on ? colors.text : colors.textDim} illumination={p.illumination} waxing={p.waxing} />
+                    <Text style={[styles.dayNum, on && styles.dayNumOn]}>{dateFmt(viewAt(n), { day: 'numeric' })}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <View style={styles.under}>
+              {offset !== 0 ? (
+                <Pressable onPress={() => go(0)} style={styles.today} accessibilityRole="button">
+                  <Text style={styles.todayText}>{t('moonBackToday')}</Text>
+                </Pressable>
+              ) : (
+                <Text style={panelText.note}>
+                  {swiped
+                    ? `${t('moonNextFull', { date: shortDate(upcoming.full) })}  ·  ${t('moonNextNew', { date: shortDate(upcoming.new) })}`
+                    : clarity
+                      ? `${t('moonViewAround', { time: time(clarity.at) })} · ${t('moonClarity')} ${clarity.score}  ·  ‹ ${t('moonSwipeHint')} ›`
+                      : `‹  ${t('moonSwipeHint')}  ›`}
+                </Text>
+              )}
+            </View>
+          </Panel>
+        </Rise>
       </SafeAreaView>
       <CloseButton />
     </View>
@@ -257,30 +253,15 @@ const styles = StyleSheet.create({
   pill: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 13, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(243,214,107,0.6)' },
   pillText: { fontSize: 13, fontWeight: '600', color: colors.moonTime },
   hero: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  titleBlock: { alignItems: 'center', paddingHorizontal: spacing.xl, gap: 4 },
-  phase: { fontSize: 34, lineHeight: 40, fontWeight: '300', letterSpacing: 0.5, color: '#FFFFFF' },
-  phaseZh: { letterSpacing: 8, marginLeft: 8 },
-  verdict: { fontSize: 14, lineHeight: 20, color: 'rgba(255,255,255,0.78)', textAlign: 'center' },
   stale: { opacity: 0.45 },
-  stats: {
-    flexDirection: 'row',
-    marginTop: spacing.md,
-    marginHorizontal: spacing.lg,
-    paddingVertical: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.16)',
-  },
-  stat: { flex: 1, alignItems: 'center', gap: 3 },
-  statLabel: { fontSize: 11, fontWeight: '500', letterSpacing: 1.2, color: 'rgba(255,255,255,0.5)' },
-  statValue: { fontSize: 20, fontWeight: '300', color: '#FFFFFF', fontVariant: ['tabular-nums'] },
-  footnote: { ...type.caption, fontSize: 11, color: 'rgba(255,255,255,0.45)', textAlign: 'center', marginTop: 6 },
-  strip: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.lg, marginTop: spacing.sm },
+  panelWrap: { marginHorizontal: spacing.md },
+  panel: { gap: spacing.md, paddingVertical: spacing.lg - 4 },
+  strip: { flexDirection: 'row', justifyContent: 'space-between' },
   day: { width: 40, alignItems: 'center', gap: 3, paddingVertical: 5, borderRadius: 12 },
   dayOn: { backgroundColor: 'rgba(255,255,255,0.1)' },
   dayNum: { ...type.caption, fontSize: 11, color: colors.textDim, fontVariant: ['tabular-nums'] },
   dayNumOn: { color: colors.text, fontWeight: '600' },
-  under: { height: 30, alignItems: 'center', justifyContent: 'center', marginBottom: 84 },
+  under: { minHeight: 28, alignItems: 'center', justifyContent: 'center' },
   today: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.12)' },
   todayText: { ...type.caption, fontWeight: '600', color: colors.text },
   moonBlur: { position: 'absolute' },

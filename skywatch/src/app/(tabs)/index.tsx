@@ -4,6 +4,7 @@ import { ActivityIndicator, Animated, Pressable, RefreshControl, ScrollView, Sty
 import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Glass, type Aura } from '../../components/Glass';
+import { GlowOrb } from '../../components/GlowOrb';
 import { MoonDisc } from '../../components/MoonDisc';
 import { Rise, useCountUp } from '../../components/Motion';
 import { skyPhaseFor } from '../../components/SceneBackground';
@@ -46,9 +47,23 @@ const AURA = {
 // Type on this page runs in four steps: a small spaced label names each card,
 // one line says what tonight is like, the numbers are large and light, and
 // supporting detail is small and dim.
-function Card({ label, height, aura, onPress, children }: { label: string; height: number; aura: Aura; onPress?: () => void; children: React.ReactNode }) {
+function Card({
+  label,
+  height,
+  aura,
+  backdrop,
+  onPress,
+  children,
+}: {
+  label: string;
+  height: number;
+  aura: Aura;
+  backdrop?: React.ReactNode;
+  onPress?: () => void;
+  children: React.ReactNode;
+}) {
   return (
-    <Glass onPress={onPress} style={{ height }} contentStyle={styles.cardContent} aura={aura} sheen>
+    <Glass onPress={onPress} style={{ height }} contentStyle={styles.cardContent} aura={aura} backdrop={backdrop} sheen>
       <Text style={styles.eyebrow}>{label}</Text>
       <View style={styles.cardBody}>{children}</View>
     </Glass>
@@ -95,7 +110,7 @@ function GlowCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
     : { color: GLOW_AURA.poor, x: 0.8, y: 0.95, strength: 0.18 };
 
   return (
-    <Card label={t('glowTitle')} height={HEIGHT.hero} aura={aura} onPress={g ? onPress : undefined}>
+    <Card label={r.glowTomorrow ? `${t('glowTitle')} · ${t('tomorrow')}` : t('glowTitle')} height={HEIGHT.hero} aura={aura} backdrop={<GlowOrb score={g?.score ?? 0} />} onPress={g ? onPress : undefined}>
       <View style={styles.cardRow}>
         <View style={styles.cardText}>
           {g ? (
@@ -111,9 +126,13 @@ function GlowCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
           )}
         </View>
         {g && (
-          <View style={styles.figureRow}>
-            <Text style={styles.heroFigure}>{shown}</Text>
-            <Text style={styles.figureUnit}>%</Text>
+          <View style={styles.figureBlock}>
+            <View style={styles.figureRow}>
+              <Text style={styles.heroFigure}>{shown}</Text>
+              <Text style={styles.figureUnit}>%</Text>
+            </View>
+            {/* Names the number, so it does not read as cloud cover. */}
+            <Text style={styles.figureCaption}>{t('glowChance')}</Text>
           </View>
         )}
       </View>
@@ -206,6 +225,7 @@ function TyphoonCard({ r, count, onPress }: { r: CityReport; count: number; onPr
               </View>
               <Text style={styles.detail} numberOfLines={1}>
                 {t('typhoonFrom', { name: ty.cyclone.name, city })}
+                {ty.trend && ty.trend !== 'steady' ? ` · ${t(`typhoonTrend_${ty.trend}`)}` : ''}
               </Text>
             </>
           ) : (
@@ -400,7 +420,20 @@ const styles = StyleSheet.create({
   metricLabel: { fontSize: 11, letterSpacing: 0.4, color: 'rgba(245,243,255,0.5)' },
   metricValue: { fontSize: 17, fontWeight: '400', color: colors.text, fontVariant: ['tabular-nums'] },
   figureRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  heroFigure: { fontSize: 120, lineHeight: 124, fontWeight: '100', letterSpacing: -5, color: colors.text, fontVariant: ['tabular-nums'] },
+  figureBlock: { alignItems: 'flex-end' },
+  figureCaption: { fontSize: 12, letterSpacing: 0.4, color: colors.textDim, marginTop: -6, marginRight: 4 },
+  // A soft shadow keeps the thin numerals legible over the bright part of the glow.
+  heroFigure: {
+    fontSize: 120,
+    lineHeight: 124,
+    fontWeight: '100',
+    letterSpacing: -5,
+    color: colors.text,
+    fontVariant: ['tabular-nums'],
+    textShadowColor: 'rgba(90,20,8,0.45)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 10,
+  },
   pair: { flexDirection: 'row', gap: spacing.md - 4 },
   // Offsets are from the card body, which sits inside the card's 20pt padding.
   radar: { position: 'absolute', right: -30, bottom: -55 },

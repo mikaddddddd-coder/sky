@@ -1,4 +1,4 @@
-import { fetchActiveCyclones, nearestCyclone, type Cyclone } from '../api/typhoon';
+import { fetchActiveCyclones, nearestCyclone, type Cyclone, type CycloneNear } from '../api/typhoon';
 import { fetchPointForecasts, type PointForecast } from '../api/openMeteo';
 import { destinationPoint } from '../geo';
 import type { City } from '../../constants/cities';
@@ -9,17 +9,23 @@ import { glowFromForecasts, type GlowForecast } from './sunsetGlow';
 // above you through roughly this much atmosphere.
 const WEST_SAMPLE_KM = 150;
 export const TYPHOON_ALERT_KM = 800;
+// Once the evening light is well over, the glow worth knowing about is tomorrow's.
+const GLOW_OVER_MS = 45 * 60_000;
+const DAY_MS = 24 * 3600_000;
 
 export type CityReport = {
   city: City;
   sky: EveningSky;
   glow: GlowForecast | null;
+  /** The sunset the glow forecast is for: tonight's, or tomorrow's once tonight's light has gone. */
+  glowSunset: Date;
+  glowTomorrow: boolean;
   /** Temperature and humidity range over the city's local calendar day. */
   today: DayRange | null;
   /** Nearest cyclone within alert range, if any. */
-  typhoon: { cyclone: Cyclone; km: number } | null;
+  typhoon: CycloneNear | null;
   /** Nearest active West Pacific cyclone at any distance. */
-  nearestCyclone: { cyclone: Cyclone; km: number } | null;
+  nearestCyclone: CycloneNear | null;
   error?: string;
 };
 
@@ -64,25 +70,32 @@ export function tzOffsetMinutes(timezone: string, at: Date) {
 export async function buildTonightReport(cities: City[], now = new Date()): Promise<TonightReport> {
   const skies = cities.map((c) => computeEveningSky(c.latitude, c.longitude, now, tzOffsetMinutes(c.timezone, now)));
 
+  const glowSuns = cities.map((c, i) => {
+    if (now.getTime() < skies[i].sun.civilDusk.getTime() + GLOW_OVER_MS) return { sun: skies[i].sun, tomorrow: false };
+    const tomorrow = new Date(now.getTime() + DAY_MS);
+    return { sun: computeEveningSky(c.latitude, c.longitude, tomorrow, tzOffsetMinutes(c.timezone, tomorrow)).sun, tomorrow: true };
+  });
+
   const points = cities.flatMap((c, i) => [
     { latitude: c.latitude, longitude: c.longitude },
-    destinationPoint(c.latitude, c.longitude, skies[i].sun.sunsetAzimuth, WEST_SAMPLE_KM),
+    destinationPoint(c.latitude, c.longitude, glowSuns[i].sun.sunsetAzimuth, WEST_SAMPLE_KM),
   ]);
 
   const [forecasts, cyclones] = await Promise.all([
     fetchPointForecasts(points).catch((e: Error) => e),
-    fetchActiveCyclones().catch(() => [] as Cyclone[]),
+    fetchActiveCyclones(now).catch(() => [] as Cyclone[]),
   ]);
 
   const reports = cities.map((city, i): CityReport => {
     const sky = skies[i];
     const near = nearestCyclone(cyclones, city.latitude, city.longitude);
     const typhoon = near && near.km <= TYPHOON_ALERT_KM ? near : null;
-    const base = { city, sky, typhoon, nearestCyclone: near };
+    const { sun: glowSun, tomorrow: glowTomorrow } = glowSuns[i];
+    const base = { city, sky, typhoon, nearestCyclone: near, glowSunset: glowSun.sunset, glowTomorrow };
     if (forecasts instanceof Error) return { ...base, glow: null, today: null, error: forecasts.message };
     return {
       ...base,
-      glow: glowFromForecasts(forecasts[i * 2], forecasts[i * 2 + 1], sky.sun.sunset),
+      glow: glowFromForecasts(forecasts[i * 2], forecasts[i * 2 + 1], glowSun.sunset),
       today: dayRange(forecasts[i * 2], now, tzOffsetMinutes(city.timezone, now)),
     };
   });

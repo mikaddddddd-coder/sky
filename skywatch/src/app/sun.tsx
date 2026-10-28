@@ -1,4 +1,3 @@
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import { useMemo } from 'react';
@@ -8,6 +7,7 @@ import { Text } from '../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseButton, useCloseButtonClearance } from '../components/CloseButton';
 import { Rise } from '../components/Motion';
+import { Panel } from '../components/Panel';
 import { SunArc } from '../components/SunArc';
 import { useSvgId } from '../components/useSvgId';
 import { colors, spacing, type } from '../constants/theme';
@@ -125,9 +125,7 @@ export default function SunScene() {
           {/* Everything else reads from one panel, in layers: the sunset, the day in
               numbers, the evening light, then the whole day's light. */}
           <Rise delay={180}>
-            <View style={styles.panel}>
-              <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
-              <LinearGradient colors={['rgba(60,20,10,0.12)', 'rgba(14,9,8,0.72)']} locations={[0, 0.35]} style={StyleSheet.absoluteFill} />
+            <Panel tint={['rgba(60,20,10,0.12)', 'rgba(14,9,8,0.72)']}>
 
               <View style={styles.block}>
                 <Text style={styles.panelTitle}>{t('sunTodaySunset')}</Text>
@@ -184,7 +182,7 @@ export default function SunScene() {
                   </View>
                 ))}
               </View>
-            </View>
+            </Panel>
           </Rise>
         </ScrollView>
       </SafeAreaView>
@@ -202,14 +200,6 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing.sm, paddingTop: spacing.sm },
   eyebrow: { ...type.body, fontWeight: '500', color: colors.text, ...textShadow },
   arc: { marginTop: spacing.xl, marginBottom: spacing.sm },
-  panel: {
-    overflow: 'hidden',
-    borderRadius: 28,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.2)',
-    padding: spacing.lg,
-    gap: spacing.lg,
-  },
   block: { gap: spacing.xs },
   panelTitle: { ...type.title, color: colors.text },
   hero: { fontSize: 68, lineHeight: 74, fontWeight: '300', letterSpacing: -2, color: '#FFFFFF', fontVariant: ['tabular-nums'], marginTop: spacing.xs },

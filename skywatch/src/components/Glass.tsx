@@ -18,13 +18,15 @@ type GlassProps = {
   sheen?: boolean;
   /** A soft coloured light inside the glass, giving the panel its own hue; also tints the rim. */
   aura?: Aura;
+  /** A picture drawn inside the glass, under the rim light and the content. */
+  backdrop?: ReactNode;
 };
 
 /** `x`/`y` place the light's centre as fractions of the panel; `strength` is 0–1. */
 export type Aura = { color: string; x?: number; y?: number; strength?: number };
 
 /** Frosted panel: blurs whatever sky is behind it, with a faint fill and hairline rim. */
-export function Glass({ children, style, contentStyle, onPress, tone = 'light', radius = 28, sheen = false, aura }: GlassProps) {
+export function Glass({ children, style, contentStyle, onPress, tone = 'light', radius = 28, sheen = false, aura, backdrop }: GlassProps) {
   const press = usePressScale();
   const body = (
     <View style={[styles.wrap, { borderRadius: radius }, sheen && styles.noRim, style]}>
@@ -36,6 +38,7 @@ export function Glass({ children, style, contentStyle, onPress, tone = 'light', 
           { borderRadius: radius, backgroundColor: aura ? colors.glassFillAura : tone === 'light' ? colors.glassFill : colors.glassFillDark },
         ]}
       />
+      {backdrop}
       {(sheen || aura) && <Sheen radius={radius} aura={aura} />}
       <View style={[styles.content, contentStyle]}>{children}</View>
     </View>
