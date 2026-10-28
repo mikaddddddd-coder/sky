@@ -7,7 +7,6 @@ import { formatTime } from './format';
 import type { Lang, StringKey } from './i18n/strings';
 import type { Settings } from './settings';
 import type { TonightReport } from './sky/report';
-import { VIVID_THRESHOLD } from './sky/sunsetGlow';
 
 const SKY_THRESHOLD = 70;
 // Alerts already sent or scheduled, keyed by kind, city and evening (or cyclone),
@@ -78,17 +77,27 @@ async function schedule(report: TonightReport, settings: Settings, lang: Lang, t
     const forgetAt = sunset.getTime() + DAY;
     const beforeSunset = sunset.getTime() > now;
 
-    // Only a glow expected to be vivid is worth a nudge; an ordinary dusk is not.
+    // Only a 火烧云 is worth a nudge; an ordinary 晚霞 is not. It gets two: one
+    // 2h ahead to plan around, and one 30 min ahead to head outside.
     // The forecast may already be for tomorrow's sunset, so it keys and times off its own.
     const glowSunset = r.glowSunset;
-    const vivid = r.glow?.vividness ?? null;
-    if (glowSunset.getTime() > now && settings.alerts.glow && r.glow && vivid !== null && vivid >= VIVID_THRESHOLD) {
+    const g = r.glow;
+    if (glowSunset.getTime() > now && settings.alerts.glow && g?.fire && g.vividness !== null) {
+      const day = glowSunset.toISOString().slice(0, 10);
+      const time = formatTime(glowSunset, r.city.timezone, lang);
       await alert(
-        `glow:${r.city.id}:${glowSunset.toISOString().slice(0, 10)}`,
+        `glow:${r.city.id}:${day}`,
         new Date(glowSunset.getTime() - 2 * 3600_000),
         glowSunset.getTime() + DAY,
         t('notifGlowTitle', { city }),
-        t('notifGlowBody', { vivid, pct: r.glow.score, time: formatTime(glowSunset, r.city.timezone, lang) }),
+        t('notifGlowBody', { vivid: g.vividness, pct: g.score, time }),
+      );
+      await alert(
+        `fire-go:${r.city.id}:${day}`,
+        new Date(glowSunset.getTime() - 30 * 60_000),
+        glowSunset.getTime() + DAY,
+        t('notifFireGoTitle', { city }),
+        t('notifFireGoBody', { time }),
       );
     }
 

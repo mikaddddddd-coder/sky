@@ -43,6 +43,8 @@ export type GlowForecast = {
   edgeKm: number | null;
   score: number; // 0–100, read as "chance of a memorable glow"
   level: Level;
+  /** Likely and vivid at once: the sky should burn red, a 火烧云 rather than an ordinary 晚霞. */
+  fire: boolean;
   reasons: GlowReason[];
   inputs: GlowInputs;
 };
@@ -65,6 +67,9 @@ const EDGE_CLOUD = 10; // % high+mid cloud below which the cloud sheet has ended
 const BEST_EDGE_KM = 400;
 const MAX_EDGE_KM = 500;
 export const VIVID_THRESHOLD = 60;
+// A 火烧云 needs both: good odds that it lights up at all, and a vivid red when it does.
+const FIRE_SCORE = 50;
+const isFire = (score: number, vividness: number | null) => score >= FIRE_SCORE && vividness !== null && vividness >= VIVID_THRESHOLD;
 
 export type VividLevel = 'vivid' | 'fair' | 'pale';
 export const vividLevel = (v: number): VividLevel => (v >= VIVID_THRESHOLD ? 'vivid' : v >= 35 ? 'fair' : 'pale');
@@ -148,7 +153,8 @@ export function scoreGlow(i: GlowInputs, ray: { high: number; mid: number }[] | 
   // Lead with what hurts; when the glow is unlikely, upbeat reasons only confuse.
   const negatives = reasons.filter((r) => !POSITIVE.has(r));
   const positives = score >= 25 ? reasons.filter((r) => POSITIVE.has(r)) : [];
-  return { score, level: levelFromScore(score), reasons: [...negatives, ...positives], inputs: i, ...vividnessFor(i, ray) };
+  const vivid = vividnessFor(i, ray);
+  return { score, level: levelFromScore(score), fire: isFire(score, vivid.vividness), reasons: [...negatives, ...positives], inputs: i, ...vivid };
 }
 
 /** Value at the hour closest to `t`, averaged with its neighbours to smooth model noise. */

@@ -50,12 +50,14 @@ const HOURLY_VARS = [
 export async function fetchPointForecasts(points: { latitude: number; longitude: number }[]): Promise<PointForecast[]> {
   const lat = points.map((p) => p.latitude.toFixed(3)).join(',');
   const lon = points.map((p) => p.longitude.toFixed(3)).join(',');
-  const common = `latitude=${lat}&longitude=${lon}&timeformat=unixtime&past_days=1&forecast_days=2`;
+  // A week ahead (plus today) for the 7-day glow outlook. The air-quality model only
+  // runs 7 days out, so the last evening simply goes without aerosols.
+  const common = `latitude=${lat}&longitude=${lon}&timeformat=unixtime&past_days=1`;
 
   const [weather, air] = await Promise.all([
-    getJson<ForecastResponse | ForecastResponse[]>(`${FORECAST_URL}?${common}&hourly=${HOURLY_VARS}`, 30_000),
+    getJson<ForecastResponse | ForecastResponse[]>(`${FORECAST_URL}?${common}&forecast_days=8&hourly=${HOURLY_VARS}`, 30_000),
     // Haze only fine-tunes the score, so a slow answer is not worth waiting for.
-    getJson<AirResponse | AirResponse[]>(`${AIR_URL}?${common}&hourly=aerosol_optical_depth`, 12_000).catch(() => null),
+    getJson<AirResponse | AirResponse[]>(`${AIR_URL}?${common}&forecast_days=7&hourly=aerosol_optical_depth`, 12_000).catch(() => null),
   ]);
 
   const weatherList = Array.isArray(weather) ? weather : [weather];
@@ -127,11 +129,11 @@ export type CanvasClouds = { time: number[]; high: number[]; mid: number[] };
 
 type CanvasResponse = { hourly: { time: number[]; cloud_cover_high: number[]; cloud_cover_mid: number[] } };
 
-/** High and mid cloud only, for many points in one request: the clouds out along the sunset direction. */
+/** High and mid cloud only, for many points in one request: the clouds out toward the sunset and the sunrise. */
 export async function fetchCanvasClouds(points: { latitude: number; longitude: number }[]): Promise<CanvasClouds[]> {
   const lat = points.map((p) => p.latitude.toFixed(3)).join(',');
   const lon = points.map((p) => p.longitude.toFixed(3)).join(',');
-  const url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&timeformat=unixtime&past_days=1&forecast_days=2&hourly=cloud_cover_high,cloud_cover_mid`;
+  const url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&timeformat=unixtime&past_days=1&forecast_days=8&hourly=cloud_cover_high,cloud_cover_mid`;
   const data = await getJson<CanvasResponse | CanvasResponse[]>(url, 30_000);
   return (Array.isArray(data) ? data : [data]).map(({ hourly: h }) => ({
     time: h.time.map((t) => t * 1000),

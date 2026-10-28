@@ -171,3 +171,39 @@ export function PlusIcon(p: IconProps) {
     </Frame>
   );
 }
+
+export function SunriseIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Path d="M3 17h18M6.5 17a5.5 5.5 0 0 1 11 0" />
+      <Path d="M12 3.5v5M9.5 6l2.5-2.5L14.5 6M7 20.5h10" />
+    </Frame>
+  );
+}
+
+export function CalendarIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Path d="M5 6.5h14a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7.5a1 1 0 0 1 1-1Z" />
+      <Path d="M4 10.5h16M8.5 4v4M15.5 4v4" />
+    </Frame>
+  );
+}
+
+export function BellIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 1.5H5l1.5-1.5Z" />
+      <Path d="M10 20.5a2 2 0 0 0 4 0" />
+    </Frame>
+  );
+}
+
+export function LockIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Path d="M6.5 11h11a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z" />
+      <Path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3" />
+    </Frame>
+  );
+}

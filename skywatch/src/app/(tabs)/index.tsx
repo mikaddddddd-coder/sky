@@ -5,6 +5,7 @@ import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Glass, type Aura } from '../../components/Glass';
 import { GlowOrb } from '../../components/GlowOrb';
+import { LockIcon } from '../../components/Icons';
 import { aodLevel, vividLevel } from '../../lib/sky/sunsetGlow';
 import { MoonDisc } from '../../components/MoonDisc';
 import { Rise, useCountUp } from '../../components/Motion';
@@ -18,7 +19,7 @@ import { formatTime } from '../../lib/format';
 import { useTonightReport } from '../../lib/report';
 import { useSettings } from '../../lib/settings';
 import type { Level } from '../../lib/sky/level';
-import type { CityReport } from '../../lib/sky/report';
+import type { CityReport, GlowKind } from '../../lib/sky/report';
 
 // Only the promising levels get colour; the rest stay quiet white.
 const LEVEL_COLOR: Record<Level, string> = {
@@ -36,6 +37,9 @@ const RADAR = 150;
 // Each card glows in its own colour. The glow card's light follows tonight's odds,
 // so a promising evening is visibly louder than a quiet one.
 const GLOW_AURA: Record<Level, string> = { excellent: '#FF4F7B', good: '#FF7444', fair: '#E07752', poor: '#C2577A' };
+// A 火烧云 is the one evening the card should shout: deep red light, red verdict.
+const FIRE_AURA: Aura = { color: '#FF3A2E', x: 0.8, y: 0.95, strength: 0.6 };
+const FIRE_COLOR = '#FF8A6B';
 const AURA = {
   sun: { color: '#FFA53D', x: 0.85, y: 1.05, strength: 0.22 },
   moon: { color: '#8FA8FF', x: 0.75, y: 0.3, strength: 0.2 },
@@ -53,6 +57,7 @@ function Card({
   height,
   aura,
   backdrop,
+  accessory,
   onPress,
   children,
 }: {
@@ -60,12 +65,17 @@ function Card({
   height: number;
   aura: Aura;
   backdrop?: React.ReactNode;
+  /** Sits at the right end of the label row. */
+  accessory?: React.ReactNode;
   onPress?: () => void;
   children: React.ReactNode;
 }) {
   return (
     <Glass onPress={onPress} style={{ height }} contentStyle={styles.cardContent} aura={aura} backdrop={backdrop} sheen>
-      <Text style={styles.eyebrow}>{label}</Text>
+      <View style={styles.eyebrowRow}>
+        <Text style={styles.eyebrow}>{label}</Text>
+        {accessory}
+      </View>
       <View style={styles.cardBody}>{children}</View>
     </Glass>
   );
@@ -101,21 +111,61 @@ function CityHeader({ r }: { r: CityReport }) {
   );
 }
 
-function GlowCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
+/** Morning or evening; sunrise glows are for members, so the switch sends others to the offer. */
+function KindSwitch({ kind, locked, onChange }: { kind: GlowKind; locked: boolean; onChange: (k: GlowKind) => void }) {
   const { t } = useSettings();
-  const g = r.glow;
+  const option = (k: GlowKind, label: string, lock = false) => (
+    <Pressable onPress={() => onChange(k)} hitSlop={6} style={[styles.kindOption, kind === k && styles.kindOn]}>
+      {lock && <LockIcon color="rgba(245,243,255,0.55)" size={12} />}
+      <Text style={[styles.kindText, kind === k && styles.kindTextOn]}>{label}</Text>
+    </Pressable>
+  );
+  return (
+    <View style={styles.kindSwitch}>
+      {option('dawn', t('dawnTitle'), locked)}
+      {option('dusk', t('glowTitle'))}
+    </View>
+  );
+}
+
+function GlowCard({ r }: { r: CityReport }) {
+  const { t, settings } = useSettings();
+  const router = useRouter();
+  const member = settings.member;
+  // Members see whichever glow comes next; everyone else sees the evening.
+  const nextIsDawn = !!r.week && r.week[r.dawnIndex].sunrise.getTime() < r.week[r.duskIndex].sunset.getTime();
+  const [picked, setPicked] = useState<GlowKind | null>(null);
+  const kind: GlowKind = member ? (picked ?? (nextIsDawn ? 'dawn' : 'dusk')) : 'dusk';
+  const pick = (k: GlowKind) => (k === 'dawn' && !member ? router.push('/member') : setPicked(k));
+  const index = kind === 'dawn' ? r.dawnIndex : r.duskIndex;
+  const g = kind === 'dawn' ? r.week?.[index]?.dawn ?? null : r.glow;
+  const onPress = () => router.push({ pathname: '/glow', params: { city: r.city.id, kind } });
   const shown = useCountUp(g?.score ?? 0);
-  const aura: Aura = g
-    ? { color: GLOW_AURA[g.level], x: 0.8, y: 0.95, strength: 0.2 + (0.2 * g.score) / 100 }
-    : { color: GLOW_AURA.poor, x: 0.8, y: 0.95, strength: 0.18 };
+  const fire = !!g?.fire;
+  const aura: Aura = fire
+    ? FIRE_AURA
+    : g
+      ? { color: GLOW_AURA[g.level], x: 0.8, y: 0.95, strength: 0.2 + (0.2 * g.score) / 100 }
+      : { color: GLOW_AURA.poor, x: 0.8, y: 0.95, strength: 0.18 };
+  // Every evening is a 晚霞; only the vivid, likely ones earn the name 火烧云.
+  const title = fire ? `🔥 ${t('fireTitle')}` : t(kind === 'dawn' ? 'dawnTitle' : 'glowTitle');
 
   return (
-    <Card label={r.glowTomorrow ? `${t('glowTitle')} · ${t('tomorrow')}` : t('glowTitle')} height={HEIGHT.hero} aura={aura} backdrop={<GlowOrb score={g?.score ?? 0} />} onPress={g ? onPress : undefined}>
+    <Card
+      label={index > 0 ? `${title} · ${t('tomorrow')}` : title}
+      height={HEIGHT.hero}
+      aura={aura}
+      backdrop={<GlowOrb score={g?.score ?? 0} fire={fire} />}
+      accessory={<KindSwitch kind={kind} locked={!member} onChange={pick} />}
+      onPress={g ? onPress : undefined}
+    >
       <View style={styles.cardRow}>
         <View style={styles.cardText}>
           {g ? (
             <>
-              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={[styles.headline, { color: LEVEL_COLOR[g.level] }]}>{t(`glowLevel_${g.level}`)}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={[styles.headline, { color: fire ? FIRE_COLOR : LEVEL_COLOR[g.level] }]}>
+                {fire ? t('fireHeadline') : t(kind === 'dawn' ? `dawnLevel_${g.level}` : `glowLevel_${g.level}`)}
+              </Text>
               <View style={styles.metrics}>
                 {/* How red it would get, and how clear the air is. */}
                 <Metric label={t('glowVividness')} value={g.vividness == null ? '—' : `${g.vividness} ${t(`vivid_${vividLevel(g.vividness)}`)}`} />
@@ -129,7 +179,7 @@ function GlowCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
         {g && (
           <View style={styles.figureBlock}>
             <View style={styles.figureRow}>
-              <Text style={styles.heroFigure}>{shown}</Text>
+              <Text style={[styles.heroFigure, fire && styles.heroFire]}>{shown}</Text>
               <Text style={styles.figureUnit}>%</Text>
             </View>
             {/* Names the number, so it does not read as cloud cover. */}
@@ -256,7 +306,7 @@ const CityPage = memo(function CityPage({ r, count, onOpen }: { r: CityReport; c
         <CityHeader r={r} />
       </Rise>
       <Rise delay={50}>
-        <GlowCard r={r} onPress={() => open('/glow')} />
+        <GlowCard r={r} />
       </Rise>
       <Rise delay={100}>
         <SunCard r={r} onPress={() => open('/sun')} />
@@ -276,7 +326,7 @@ const CityPage = memo(function CityPage({ r, count, onOpen }: { r: CityReport; c
   );
 });
 
-type ScenePath = '/glow' | '/sun' | '/moon' | '/venus' | '/typhoon';
+type ScenePath = '/sun' | '/moon' | '/venus' | '/typhoon';
 
 export default function TonightScreen() {
   const { t, lang } = useSettings();
@@ -407,6 +457,12 @@ const styles = StyleSheet.create({
   tempDash: { color: colors.textDim },
   // Card label: small, spaced, quiet.
   eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: 'rgba(245,243,255,0.5)' },
+  eyebrowRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 24 },
+  kindSwitch: { flexDirection: 'row', padding: 2, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.08)' },
+  kindOption: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  kindOn: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  kindText: { fontSize: 12, fontWeight: '500', color: 'rgba(245,243,255,0.55)' },
+  kindTextOn: { color: colors.text },
   // One line of verdict per card.
   headline: { fontSize: 22, fontWeight: '600', letterSpacing: -0.3, color: colors.text },
   headBlock: { gap: 4 },
@@ -435,6 +491,7 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 10,
   },
+  heroFire: { fontWeight: '200', textShadowColor: 'rgba(255,58,46,0.7)', textShadowRadius: 18 },
   pair: { flexDirection: 'row', gap: spacing.md - 4 },
   // Offsets are from the card body, which sits inside the card's 20pt padding.
   radar: { position: 'absolute', right: -30, bottom: -55 },

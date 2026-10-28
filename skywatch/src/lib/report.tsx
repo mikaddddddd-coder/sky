@@ -18,7 +18,7 @@ const ReportContext = createContext<ReportContextValue | null>(null);
 
 // The last report is kept on the device so the app opens straight onto it
 // while a fresh one loads; "updated at" says how old it is.
-const CACHE_KEY = 'skywatch.report.v1';
+const CACHE_KEY = 'skywatch.report.v2';
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 const reviveDates = (_key: string, v: unknown) => (typeof v === 'string' && ISO_DATE.test(v) ? new Date(v) : v);
 
@@ -27,7 +27,7 @@ function keepForecasts(next: TonightReport, prev: TonightReport): TonightReport 
     ...next,
     cities: next.cities.map((c) => {
       const old = c.error ? prev.cities.find((p) => p.city.id === c.city.id && !p.error) : undefined;
-      return old ? { ...c, glow: old.glow, today: old.today, glowSunset: old.glowSunset, glowTomorrow: old.glowTomorrow, error: undefined } : c;
+      return old ? { ...c, glow: old.glow, today: old.today, glowSunset: old.glowSunset, glowTomorrow: old.glowTomorrow, week: old.week, dawnIndex: old.dawnIndex, duskIndex: old.duskIndex, error: undefined } : c;
     }),
   };
 }

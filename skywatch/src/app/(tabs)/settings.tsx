@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { Alert, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +23,15 @@ const ALERTS: { key: keyof Settings['alerts']; title: StringKey; desc: StringKey
 
 export default function SettingsScreen() {
   const { settings, update, t, lang } = useSettings();
+  const router = useRouter();
+  // No payments yet: members can switch it back off to see the free app again.
+  const openMember = () =>
+    settings.member
+      ? Alert.alert(t('memberTitle'), undefined, [
+          { text: t('memberCancelDemo'), style: 'destructive', onPress: () => update({ member: false }) },
+          { text: t('close'), style: 'cancel' },
+        ])
+      : router.push('/member');
   const langLabel = (v: Settings['language']) => LANG_OPTIONS.find((o) => o.value === v)?.label || t('langSystem');
 
   const pickLanguage = () =>
@@ -36,6 +46,13 @@ export default function SettingsScreen() {
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>{t('tabSettings')}</Text>
+
+          <Group>
+            <Row icon={<SunsetIcon color={colors.glow} />} label={t('memberTitle')} onPress={openMember}>
+              <Text style={[groupStyles.value, settings.member && { color: colors.glow }]}>{t(settings.member ? 'memberActive' : 'memberInactive')}</Text>
+              <ChevronRightIcon color={colors.textDim} size={18} />
+            </Row>
+          </Group>
 
           <Group title={t('settingsGeneral')}>
             <Row icon={<GlobeIcon color={colors.text} />} label={t('settingsLanguage')} onPress={pickLanguage}>

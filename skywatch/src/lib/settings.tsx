@@ -10,6 +10,8 @@ export type Settings = {
   /** Cities added by search or from the device location, kept so they survive restarts. */
   customCities: City[];
   alerts: { glow: boolean; sky: boolean; typhoon: boolean };
+  /** Membership unlocks the 7-day outlook and sunrise glows. Set locally until payments exist. */
+  member: boolean;
 };
 
 const DEFAULTS: Settings = {
@@ -17,6 +19,7 @@ const DEFAULTS: Settings = {
   cityIds: DEFAULT_CITY_IDS,
   customCities: [],
   alerts: { glow: true, sky: true, typhoon: true },
+  member: false,
 };
 
 const STORAGE_KEY = 'skywatch.settings.v1';

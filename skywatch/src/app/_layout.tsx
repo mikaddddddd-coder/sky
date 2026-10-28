@@ -15,6 +15,7 @@ export default function RootLayout() {
           <Stack.Screen name="moon" options={{ animation: 'fade' }} />
           <Stack.Screen name="venus" options={{ animation: 'fade' }} />
           <Stack.Screen name="typhoon" options={{ animation: 'fade' }} />
+          <Stack.Screen name="member" options={{ animation: 'fade' }} />
         </Stack>
       </ReportProvider>
     </SettingsProvider>

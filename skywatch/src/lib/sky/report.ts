@@ -11,7 +11,15 @@ const WEST_SAMPLE_KM = 150;
 export const TYPHOON_ALERT_KM = 800;
 // Once the evening light is well over, the glow worth knowing about is tomorrow's.
 const GLOW_OVER_MS = 45 * 60_000;
+// Morning colour fades faster once the sun is up.
+const DAWN_OVER_MS = 30 * 60_000;
 const DAY_MS = 24 * 3600_000;
+export const WEEK_DAYS = 7;
+
+export type GlowKind = 'dawn' | 'dusk';
+
+/** One local day of the outlook: its sunrise glow (朝霞) and sunset glow (晚霞). */
+export type GlowDay = { sunrise: Date; sunset: Date; dawn: GlowForecast | null; dusk: GlowForecast | null };
 
 export type CityReport = {
   city: City;
@@ -20,6 +28,11 @@ export type CityReport = {
   /** The sunset the glow forecast is for: tonight's, or tomorrow's once tonight's light has gone. */
   glowSunset: Date;
   glowTomorrow: boolean;
+  /** Today and the six days after it, in the city's local days. */
+  week: GlowDay[];
+  /** The first day in `week` whose sunrise glow, and whose sunset glow, is still to come. */
+  dawnIndex: number;
+  duskIndex: number;
   /** Temperature and humidity range over the city's local calendar day. */
   today: DayRange | null;
   /** Nearest cyclone within alert range, if any. */
@@ -69,20 +82,32 @@ export function tzOffsetMinutes(timezone: string, at: Date) {
 
 export async function buildTonightReport(cities: City[], now = new Date()): Promise<TonightReport> {
   const skies = cities.map((c) => computeEveningSky(c.latitude, c.longitude, now, tzOffsetMinutes(c.timezone, now)));
+  // Sun times for each of the next seven local days.
+  const weeks = cities.map((c, i) =>
+    Array.from({ length: WEEK_DAYS }, (_, d) => {
+      const day = new Date(now.getTime() + d * DAY_MS);
+      return d === 0 ? skies[i].sun : computeEveningSky(c.latitude, c.longitude, day, tzOffsetMinutes(c.timezone, day)).sun;
+    }),
+  );
+  const duskIndex = weeks.map((w) => Math.max(0, w.findIndex((s) => now.getTime() < s.civilDusk.getTime() + GLOW_OVER_MS)));
+  const dawnIndex = weeks.map((w) => Math.max(0, w.findIndex((s) => now.getTime() < s.sunrise.getTime() + DAWN_OVER_MS)));
 
-  const glowSuns = cities.map((c, i) => {
-    if (now.getTime() < skies[i].sun.civilDusk.getTime() + GLOW_OVER_MS) return { sun: skies[i].sun, tomorrow: false };
-    const tomorrow = new Date(now.getTime() + DAY_MS);
-    return { sun: computeEveningSky(c.latitude, c.longitude, tomorrow, tzOffsetMinutes(c.timezone, tomorrow)).sun, tomorrow: true };
+  // The sunset and sunrise directions barely move in a week, so one bearing each serves every day.
+  const bearings = cities.map((_, i) => {
+    const west = weeks[i][duskIndex[i]].sunsetAzimuth;
+    return { west, east: (360 - west) % 360 };
   });
 
   const points = cities.flatMap((c, i) => [
     { latitude: c.latitude, longitude: c.longitude },
-    destinationPoint(c.latitude, c.longitude, glowSuns[i].sun.sunsetAzimuth, WEST_SAMPLE_KM),
+    destinationPoint(c.latitude, c.longitude, bearings[i].west, WEST_SAMPLE_KM),
+    destinationPoint(c.latitude, c.longitude, bearings[i].east, WEST_SAMPLE_KM),
   ]);
 
-  // Clouds out along each city's sunset direction, for how vivid the glow would be.
-  const rayPoints = cities.flatMap((c, i) => RAY_KM.map((km) => destinationPoint(c.latitude, c.longitude, glowSuns[i].sun.sunsetAzimuth, km)));
+  // Clouds out toward the sunset and the sunrise, for how vivid each glow would be.
+  const rayPoints = cities.flatMap((c, i) =>
+    [bearings[i].west, bearings[i].east].flatMap((az) => RAY_KM.map((km) => destinationPoint(c.latitude, c.longitude, az, km))),
+  );
 
   const [forecasts, rays, cyclones] = await Promise.all([
     fetchPointForecasts(points).catch((e: Error) => e),
@@ -94,14 +119,31 @@ export async function buildTonightReport(cities: City[], now = new Date()): Prom
     const sky = skies[i];
     const near = nearestCyclone(cyclones, city.latitude, city.longitude);
     const typhoon = near && near.km <= TYPHOON_ALERT_KM ? near : null;
-    const { sun: glowSun, tomorrow: glowTomorrow } = glowSuns[i];
-    const base = { city, sky, typhoon, nearestCyclone: near, glowSunset: glowSun.sunset, glowTomorrow };
-    if (forecasts instanceof Error) return { ...base, glow: null, today: null, error: forecasts.message };
-    return {
-      ...base,
-      glow: glowFromForecasts(forecasts[i * 2], forecasts[i * 2 + 1], glowSun.sunset, rays && rays.slice(i * RAY_KM.length, (i + 1) * RAY_KM.length)),
-      today: dayRange(forecasts[i * 2], now, tzOffsetMinutes(city.timezone, now)),
+    const n = RAY_KM.length;
+    const westRay = rays && rays.slice(i * 2 * n, i * 2 * n + n);
+    const eastRay = rays && rays.slice(i * 2 * n + n, (i + 1) * 2 * n);
+    const failed = forecasts instanceof Error;
+    const [local, west, east] = failed ? [] : forecasts.slice(i * 3, i * 3 + 3);
+    const week: GlowDay[] = weeks[i].map((s) => ({
+      sunrise: s.sunrise,
+      sunset: s.sunset,
+      dawn: failed ? null : glowFromForecasts(local, east, s.sunrise, eastRay),
+      dusk: failed ? null : glowFromForecasts(local, west, s.sunset, westRay),
+    }));
+    const today = week[duskIndex[i]];
+    const base = {
+      city,
+      sky,
+      typhoon,
+      nearestCyclone: near,
+      glowSunset: today.sunset,
+      glowTomorrow: duskIndex[i] > 0,
+      week,
+      dawnIndex: dawnIndex[i],
+      duskIndex: duskIndex[i],
     };
+    if (failed) return { ...base, glow: null, today: null, error: forecasts.message };
+    return { ...base, glow: today.dusk, today: dayRange(local, now, tzOffsetMinutes(city.timezone, now)) };
   });
 
   return { generatedAt: now, cities: reports, activeCyclones: cyclones };
