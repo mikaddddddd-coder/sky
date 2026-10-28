@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "SkyWatch",
+    "name": "Look Up",
     "slug": "skywatch",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -15,7 +15,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#03040C",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -35,7 +35,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "SkyWatch uses your location to work out sunset times and tonight's sky where you are."
+          "locationWhenInUsePermission": "Look Up uses your location to work out sunset times and tonight's sky where you are."
         }
       ]
     ],

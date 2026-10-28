@@ -1,7 +1,7 @@
 export type Lang = 'zh' | 'en';
 
 const zh = {
-  appName: 'SkyWatch',
+  appName: '天色',
   tabTonight: '今晚',
   tabCities: '城市',
   tabSettings: '设置',
@@ -212,7 +212,7 @@ const zh = {
 export type StringKey = keyof typeof zh;
 
 const en: Record<StringKey, string> = {
-  appName: 'SkyWatch',
+  appName: 'Look Up',
   tabTonight: 'Tonight',
   tabCities: 'Cities',
   tabSettings: 'Settings',
