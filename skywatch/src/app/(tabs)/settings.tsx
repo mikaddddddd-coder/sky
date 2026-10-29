@@ -34,7 +34,7 @@ export default function SettingsScreen() {
   const openMember = () =>
     settings.member
       ? Alert.alert(t('memberTitle'), undefined, [
-          { text: t('memberCancelDemo'), style: 'destructive', onPress: () => update({ member: false }) },
+          { text: t('memberCancelDemo'), style: 'destructive', onPress: () => update({ member: false, guideTaste: null }) },
           { text: t('close'), style: 'cancel' },
         ])
       : router.push('/member');

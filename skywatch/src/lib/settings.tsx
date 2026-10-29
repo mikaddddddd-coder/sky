@@ -17,6 +17,11 @@ export type Settings = {
   glowAlert: GlowAlert;
   /** Membership unlocks the 7-day outlook and sunrise glows. Set locally until payments exist. */
   member: boolean;
+  /**
+   * The one 火烧云 whose shooting guide a non-member has had for free, as `kind:date`.
+   * The first 火烧云 they open spends it; that same glow stays open, later ones don't.
+   */
+  guideTaste: string | null;
 };
 
 export type GlowAlert = { level: 'fire' | 'good'; leadMin: 60 | 120 | 180 };
@@ -31,6 +36,7 @@ const DEFAULTS: Settings = {
   alerts: { glow: true, sky: true, typhoon: true },
   glowAlert: DEFAULT_GLOW_ALERT,
   member: false,
+  guideTaste: null,
 };
 
 const STORAGE_KEY = 'skywatch.settings.v1';

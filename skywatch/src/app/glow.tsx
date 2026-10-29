@@ -83,15 +83,22 @@ function WeekOutlook({ r, kind, selected, member, onSelect }: { r: CityReport; k
 
 /**
  * Where to face and when to be there. Members get the times; everyone else sees what it
- * offers behind a lock, the same way into the offer as the week.
+ * offers behind a lock, the same way into the offer as the week. The first 火烧云 a
+ * non-member opens comes with the guide for free, once: the evening it matters most.
  */
 function ShootingGuide({ r, kind, at, g, member }: { r: CityReport; kind: GlowKind; at: Date; g: GlowForecast; member: boolean }) {
-  const { t, lang } = useSettings();
+  const { t, lang, settings, update } = useSettings();
   const router = useRouter();
-  if (!member) {
+  // The sunset's UTC day is enough to tell one glow from the next.
+  const tasteKey = `${kind}:${at.toISOString().slice(0, 10)}`;
+  const tasting = !member && g.fire && (settings.guideTaste == null || settings.guideTaste === tasteKey);
+  useEffect(() => {
+    if (tasting && settings.guideTaste == null) update({ guideTaste: tasteKey });
+  }, [tasting, settings.guideTaste, tasteKey, update]);
+  if (!member && !tasting) {
     return (
       <Pressable style={styles.guideLocked} onPress={() => router.push('/member')}>
-        <Text style={styles.guideTeaser}>{t('guideTeaser')}</Text>
+        <Text style={styles.guideTeaser}>{t(settings.guideTaste ? 'guideTeaserAfter' : 'guideTeaser')}</Text>
         <View style={styles.weekLockPill}>
           <LockIcon color="#1A0E10" size={14} />
           <Text style={styles.weekLockText}>{t('guideUnlock')}</Text>
@@ -113,6 +120,12 @@ function ShootingGuide({ r, kind, at, g, member }: { r: CityReport; kind: GlowKi
         <PanelStat label={t('guideBlue')} value={span(guide.blue)} />
       </View>
       <Text style={[styles.fireNote, styles.guideTip]}>{t(tipKey, { dir })}</Text>
+      {tasting && (
+        <Pressable style={styles.guideTaste} onPress={() => router.push('/member')}>
+          <Text style={styles.guideTasteText}>{t('guideTaste')}</Text>
+          <Text style={styles.guideTasteLink}>{t('guideTasteMore')} ›</Text>
+        </Pressable>
+      )}
     </>
   );
 }
@@ -352,6 +365,9 @@ const styles = StyleSheet.create({
   guideLocked: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, paddingVertical: spacing.xs },
   guideTeaser: { ...type.caption, color: colors.textDim, flex: 1 },
   guideTip: { marginTop: spacing.sm },
+  guideTaste: { marginTop: spacing.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: 14, backgroundColor: 'rgba(255,138,91,0.14)', gap: 4 },
+  guideTasteText: { ...type.caption, color: colors.text },
+  guideTasteLink: { ...type.caption, fontWeight: '700', color: '#FF8A6B' },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.16)' },
   method: { ...type.caption, color: colors.textDim },
 });
