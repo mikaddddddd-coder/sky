@@ -1,5 +1,7 @@
 import Stack from 'expo-router/stack';
 import { StatusBar } from 'expo-status-bar';
+// Loaded first so the background refresh task is defined before any screen.
+import '../lib/background';
 import { ReportProvider } from '../lib/report';
 import { SettingsProvider } from '../lib/settings';
 

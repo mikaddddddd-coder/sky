@@ -10,15 +10,26 @@ export type Settings = {
   /** Cities added by search or from the device location, kept so they survive restarts. */
   customCities: City[];
   alerts: { glow: boolean; sky: boolean; typhoon: boolean };
+  /**
+   * Which glows earn an alert, and how long before sunset the first one comes. Members choose;
+   * everyone else gets the defaults: only a 火烧云, 2 hours ahead.
+   */
+  glowAlert: GlowAlert;
   /** Membership unlocks the 7-day outlook and sunrise glows. Set locally until payments exist. */
   member: boolean;
 };
+
+export type GlowAlert = { level: 'fire' | 'good'; leadMin: 60 | 120 | 180 };
+export const DEFAULT_GLOW_ALERT: GlowAlert = { level: 'fire', leadMin: 120 };
+/** What actually applies: a member's own choice, or the defaults for everyone else. */
+export const glowAlertFor = (s: Settings): GlowAlert => (s.member ? s.glowAlert : DEFAULT_GLOW_ALERT);
 
 const DEFAULTS: Settings = {
   language: 'system',
   cityIds: DEFAULT_CITY_IDS,
   customCities: [],
   alerts: { glow: true, sky: true, typhoon: true },
+  glowAlert: DEFAULT_GLOW_ALERT,
   member: false,
 };
 
@@ -37,13 +48,19 @@ function systemLang(): Lang {
   return getLocales()[0]?.languageCode === 'zh' ? 'zh' : 'en';
 }
 
+export const resolveLang = (s: Settings): Lang => (s.language === 'system' ? systemLang() : s.language);
+
+/** The saved settings, read straight from storage, for work done outside the app's screens. */
+export async function loadSettings(): Promise<Settings> {
+  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  return raw ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) } : DEFAULTS;
+}
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((raw) => raw && setSettings({ ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) }))
-      .catch(() => {});
+    loadSettings().then(setSettings).catch(() => {});
   }, []);
 
   const update = useCallback((patch: Partial<Settings>) => {
@@ -55,7 +72,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<SettingsContextValue>(() => {
-    const lang = settings.language === 'system' ? systemLang() : settings.language;
+    const lang = resolveLang(settings);
     return { settings, update, lang, t: (key, vars) => translate(lang, key, vars) };
   }, [settings, update]);
 

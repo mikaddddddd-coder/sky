@@ -20,6 +20,7 @@ export type SunTimes = {
   sunrise: Date;
   sunset: Date;
   civilDusk: Date;
+  sunriseAzimuth: number;
   sunsetAzimuth: number;
 };
 
@@ -107,7 +108,13 @@ export function computeEveningSky(lat: number, lon: number, date: Date, tzOffset
   const sunset = SearchRiseSet(Body.Sun, obs, -1, noon, 1)?.date ?? new Date(noon.getTime() + 6 * 3600_000);
   const civilDusk = SearchAltitude(Body.Sun, obs, -1, noon, 1, -6)?.date ?? new Date(sunset.getTime() + 30 * 60_000);
   const sunrise = SearchRiseSet(Body.Sun, obs, +1, new Date(noon.getTime() - 12 * 3600_000), 1)?.date ?? new Date(noon.getTime() - 6 * 3600_000);
-  const sun: SunTimes = { sunrise, sunset, civilDusk, sunsetAzimuth: altAz(Body.Sun, sunset, obs).azimuth };
+  const sun: SunTimes = {
+    sunrise,
+    sunset,
+    civilDusk,
+    sunriseAzimuth: altAz(Body.Sun, sunrise, obs).azimuth,
+    sunsetAzimuth: altAz(Body.Sun, sunset, obs).azimuth,
+  };
 
   return { sun, moon: moonInfo(obs, noon, sunset), venus: venusInfo(obs, civilDusk, sunset), conjunction: conjunction(civilDusk) };
 }

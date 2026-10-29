@@ -10,7 +10,8 @@ import { LockIcon } from '../components/Icons';
 import { GlowSky } from '../components/GlowSky';
 import { easeOut, Rise, useCountUp } from '../components/Motion';
 import { Panel, PanelStat } from '../components/Panel';
-import { aodLevel, vividLevel, type GlowReason } from '../lib/sky/sunsetGlow';
+import { compassPoint, shootingGuide, type Span } from '../lib/sky/guide';
+import { aodLevel, ROUGH_FROM_DAYS, vividLevel, type GlowForecast, type GlowReason } from '../lib/sky/sunsetGlow';
 import { colors, spacing, type } from '../constants/theme';
 import { formatTime } from '../lib/format';
 import { useCityReport } from '../lib/report';
@@ -53,11 +54,13 @@ function WeekOutlook({ r, kind, selected, member, onSelect }: { r: CityReport; k
           const g = glowOf(d);
           const h = Math.max(4, ((g?.score ?? 0) / 100) * BAR_MAX);
           const color = g?.fire ? '#FF5A3D' : g && g.score >= 50 ? '#FFB38A' : 'rgba(255,255,255,0.5)';
+          // Far days are drawn fainter: a guess, not a forecast to plan around yet.
+          const rough = i >= ROUGH_FROM_DAYS;
           return (
             <Pressable key={i} style={[styles.weekDay, i === selected && styles.weekDayOn]} onPress={() => onSelect(i)} disabled={!member && i >= FREE_DAYS}>
               <Text style={styles.weekScore}>{g ? g.score : '—'}</Text>
               <View style={styles.weekTrack}>
-                <View style={[styles.weekBar, { height: h, backgroundColor: color }]} />
+                <View style={[styles.weekBar, { height: h, backgroundColor: color }, rough && styles.weekBarRough]} />
               </View>
               <Text style={[styles.weekLabel, member && i === best?.i && styles.weekLabelBest]}>{label(i)}</Text>
             </Pressable>
@@ -73,7 +76,44 @@ function WeekOutlook({ r, kind, selected, member, onSelect }: { r: CityReport; k
           </Pressable>
         )}
       </View>
+      {member && <Text style={styles.weekRough}>{t('weekRough', { from: label(ROUGH_FROM_DAYS) })}</Text>}
     </View>
+  );
+}
+
+/**
+ * Where to face and when to be there. Members get the times; everyone else sees what it
+ * offers behind a lock, the same way into the offer as the week.
+ */
+function ShootingGuide({ r, kind, at, g, member }: { r: CityReport; kind: GlowKind; at: Date; g: GlowForecast; member: boolean }) {
+  const { t, lang } = useSettings();
+  const router = useRouter();
+  if (!member) {
+    return (
+      <Pressable style={styles.guideLocked} onPress={() => router.push('/member')}>
+        <Text style={styles.guideTeaser}>{t('guideTeaser')}</Text>
+        <View style={styles.weekLockPill}>
+          <LockIcon color="#1A0E10" size={14} />
+          <Text style={styles.weekLockText}>{t('guideUnlock')}</Text>
+        </View>
+      </Pressable>
+    );
+  }
+  const guide = shootingGuide(r.city.latitude, r.city.longitude, kind, at, g);
+  const time = (d: Date) => formatTime(d, r.city.timezone, lang);
+  const span = (s: Span | null) => (s ? `${time(s.from)}–${time(s.to)}` : '—');
+  const dir = compassPoint(guide.azimuth, lang);
+  const tipKey = guide.tip === 'highLate' ? (kind === 'dawn' ? 'guideTip_highEarly' : 'guideTip_highLate') : (`guideTip_${guide.tip}` as const);
+  return (
+    <>
+      <View style={styles.grid}>
+        <PanelStat label={t('guideFace')} value={`${dir} · ${Math.round(guide.azimuth)}°`} />
+        <PanelStat label={t('guidePeak')} value={span(guide.peak)} />
+        <PanelStat label={t('guideGolden')} value={span(guide.golden)} />
+        <PanelStat label={t('guideBlue')} value={span(guide.blue)} />
+      </View>
+      <Text style={[styles.fireNote, styles.guideTip]}>{t(tipKey, { dir })}</Text>
+    </>
   );
 }
 
@@ -186,7 +226,10 @@ export default function GlowScene() {
                       <Text style={styles.unit}>%</Text>
                     </View>
                     {/* Say plainly what the number is, and how to read it. */}
-                    <Text style={styles.chance}>{t(kind === 'dawn' ? 'chanceDawn' : 'chanceDusk')}</Text>
+                    <Text style={styles.chance}>
+                      {t(kind === 'dawn' ? 'chanceDawn' : 'chanceDusk')}
+                      {g.leadDays >= ROUGH_FROM_DAYS && <Text style={styles.roughTag}>{`  ${t('roughTag')}`}</Text>}
+                    </Text>
                     <Text style={styles.sub}>{t('glowScale')}</Text>
                   </View>
 
@@ -204,6 +247,11 @@ export default function GlowScene() {
                       <Text style={styles.fireNote}>{t(kind === 'dawn' ? 'fireNoteDawn' : 'fireNote')}</Text>
                     </View>
                   )}
+
+                  <View style={styles.block}>
+                    <Text style={styles.section}>{t('guideTitle')}</Text>
+                    <ShootingGuide r={r} kind={kind} at={at ?? r.glowSunset} g={g} member={member} />
+                  </View>
 
                   {/* How vivid it would be, beside the chance of it happening. */}
                   <View style={styles.grid}>
@@ -293,11 +341,17 @@ const styles = StyleSheet.create({
   weekScore: { fontSize: 13, fontWeight: '500', color: colors.text, fontVariant: ['tabular-nums'] },
   weekTrack: { height: BAR_MAX, justifyContent: 'flex-end' },
   weekBar: { width: 10, borderRadius: 5 },
+  weekBarRough: { opacity: 0.55 },
+  weekRough: { ...type.caption, color: colors.textDim },
+  roughTag: { fontSize: 13, fontWeight: '500', color: colors.textDim },
   weekLabel: { fontSize: 11, color: colors.textDim },
   weekLabelBest: { color: colors.text, fontWeight: '600' },
   weekLock: { position: 'absolute', right: 0, top: 0, bottom: 0, borderRadius: 14, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   weekLockPill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 14, backgroundColor: 'rgba(255,138,91,0.92)' },
   weekLockText: { fontSize: 13, fontWeight: '700', color: '#1A0E10' },
+  guideLocked: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, paddingVertical: spacing.xs },
+  guideTeaser: { ...type.caption, color: colors.textDim, flex: 1 },
+  guideTip: { marginTop: spacing.sm },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.16)' },
   method: { ...type.caption, color: colors.textDim },
 });

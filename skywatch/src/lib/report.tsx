@@ -2,15 +2,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { findCity, HERE_ID, type City } from '../constants/cities';
 import { distanceKm } from './geo';
+import { syncBackgroundRefresh } from './background';
 import { scheduleTonightAlerts } from './notifications';
 import { locateHere } from './places';
-import { useSettings } from './settings';
+import { useSettings, type Settings } from './settings';
 import { buildTonightReport, type CityReport, type TonightReport } from './sky/report';
 
 type ReportContextValue = {
   report: TonightReport | null;
   loading: boolean;
   error: string | null;
+  /** Pulled by hand: skips the short-lived network cache so the numbers are as fresh as the models. */
   refresh: () => Promise<void>;
 };
 
@@ -18,9 +20,26 @@ const ReportContext = createContext<ReportContextValue | null>(null);
 
 // The last report is kept on the device so the app opens straight onto it
 // while a fresh one loads; "updated at" says how old it is.
-const CACHE_KEY = 'skywatch.report.v2';
+const CACHE_KEY = 'skywatch.report.v3';
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 const reviveDates = (_key: string, v: unknown) => (typeof v === 'string' && ISO_DATE.test(v) ? new Date(v) : v);
+
+export const citiesFor = (s: Settings) => s.cityIds.map((id) => findCity(id, s.customCities)).filter((c): c is City => !!c);
+// Includes coordinates so a moved current-location city refetches.
+export const cityKeyFor = (cities: City[]) => cities.map((c) => `${c.id}@${c.latitude.toFixed(2)},${c.longitude.toFixed(2)}`).join('|');
+
+/** Saves a report the app can open straight onto; one with a failed city is not worth keeping. */
+export async function saveReport(cityKey: string, report: TonightReport) {
+  if (report.cities.some((c) => c.error)) return;
+  await AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ cityKey, report }));
+}
+
+async function loadReport(cityKey: string): Promise<TonightReport | null> {
+  const raw = await AsyncStorage.getItem(CACHE_KEY);
+  if (!raw) return null;
+  const saved = JSON.parse(raw, reviveDates) as { cityKey: string; report: TonightReport };
+  return saved.cityKey === cityKey ? saved.report : null;
+}
 
 function keepForecasts(next: TonightReport, prev: TonightReport): TonightReport {
   return {
@@ -38,19 +57,19 @@ export function ReportProvider({ children }: { children: ReactNode }) {
   const [report, setReport] = useState<TonightReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const cities = settings.cityIds.map((id) => findCity(id, settings.customCities)).filter((c): c is City => !!c);
-  // Includes coordinates so a moved current-location city refetches.
-  const cityKey = cities.map((c) => `${c.id}@${c.latitude.toFixed(2)},${c.longitude.toFixed(2)}`).join('|');
+  const cities = citiesFor(settings);
+  const cityKey = cityKeyFor(cities);
 
-  const refresh = useCallback(async () => {
+  const load = useCallback(async (fresh: boolean) => {
     setLoading(true);
     setError(null);
     try {
-      const next = await buildTonightReport(cities);
+      // Changing the language or an alert only reschedules; the forecasts come from the network cache.
+      const next = await buildTonightReport(cities, new Date(), { fresh });
       // A city whose forecast failed keeps the forecast it already had, rather than
       // swapping good numbers for an error; only a clean report is saved.
       setReport((prev) => (prev ? keepForecasts(next, prev) : next));
-      if (!next.cities.some((c) => c.error)) AsyncStorage.setItem(CACHE_KEY, JSON.stringify({ cityKey, report: next })).catch(() => {});
+      saveReport(cityKey, next).catch(() => {});
       scheduleTonightAlerts(next, settings, lang, t).catch(() => {});
     } catch (e) {
       setError((e as Error).message);
@@ -58,22 +77,24 @@ export function ReportProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cityKey, settings.alerts, lang]);
+  }, [cityKey, settings.alerts, settings.glowAlert, settings.member, lang]);
+  const refresh = useCallback(() => load(true), [load]);
 
   // Show the saved report for these cities until the network answers; never over a fresher one.
   useEffect(() => {
-    AsyncStorage.getItem(CACHE_KEY)
-      .then((raw) => {
-        if (!raw) return;
-        const saved = JSON.parse(raw, reviveDates) as { cityKey: string; report: TonightReport };
-        if (saved.cityKey === cityKey) setReport((prev) => prev ?? saved.report);
-      })
+    loadReport(cityKey)
+      .then((saved) => saved && setReport((prev) => prev ?? saved))
       .catch(() => {});
   }, [cityKey]);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    load(false);
+  }, [load]);
+
+  const anyAlert = settings.alerts.glow || settings.alerts.sky || settings.alerts.typhoon;
+  useEffect(() => {
+    syncBackgroundRefresh(anyAlert);
+  }, [anyAlert]);
 
   // Once per launch, move the current-location city if the device has moved.
   const followsHere = settings.cityIds.includes(HERE_ID);

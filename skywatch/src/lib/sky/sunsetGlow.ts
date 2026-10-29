@@ -45,6 +45,8 @@ export type GlowForecast = {
   level: Level;
   /** Likely and vivid at once: the sky should burn red, a 火烧云 rather than an ordinary 晚霞. */
   fire: boolean;
+  /** Days ahead of today; from `ROUGH_FROM_DAYS` out the clouds are a rough guess and the score is pulled toward the usual. */
+  leadDays: number;
   reasons: GlowReason[];
   inputs: GlowInputs;
 };
@@ -70,6 +72,22 @@ export const VIVID_THRESHOLD = 60;
 // A 火烧云 needs both: good odds that it lights up at all, and a vivid red when it does.
 const FIRE_SCORE = 50;
 const isFire = (score: number, vividness: number | null) => score >= FIRE_SCORE && vividness !== null && vividness >= VIVID_THRESHOLD;
+
+// --- Lead time -------------------------------------------------------------
+// Cloud forecasts lose most of their skill after two or three days, so a far-off
+// glow is pulled toward an ordinary evening's odds rather than shown with the
+// same confidence as tonight's. Far days can still look good, just not certain,
+// and a 火烧云 that far out has to be forecast very strongly to show.
+export const ROUGH_FROM_DAYS = 2;
+const USUAL_SCORE = 30;
+const TRUST_BY_LEAD = [1, 1, 0.85, 0.75, 0.65, 0.58, 0.52];
+
+function withLead(g: GlowForecast, leadDays: number): GlowForecast {
+  const trust = TRUST_BY_LEAD[Math.min(leadDays, TRUST_BY_LEAD.length - 1)];
+  if (trust === 1) return { ...g, leadDays };
+  const score = Math.round(USUAL_SCORE + (g.score - USUAL_SCORE) * trust);
+  return { ...g, score, level: levelFromScore(score), fire: isFire(score, g.vividness), leadDays };
+}
 
 export type VividLevel = 'vivid' | 'fair' | 'pale';
 export const vividLevel = (v: number): VividLevel => (v >= VIVID_THRESHOLD ? 'vivid' : v >= 35 ? 'fair' : 'pale');
@@ -154,7 +172,7 @@ export function scoreGlow(i: GlowInputs, ray: { high: number; mid: number }[] | 
   const negatives = reasons.filter((r) => !POSITIVE.has(r));
   const positives = score >= 25 ? reasons.filter((r) => POSITIVE.has(r)) : [];
   const vivid = vividnessFor(i, ray);
-  return { score, level: levelFromScore(score), fire: isFire(score, vivid.vividness), reasons: [...negatives, ...positives], inputs: i, ...vivid };
+  return { score, level: levelFromScore(score), fire: isFire(score, vivid.vividness), leadDays: 0, reasons: [...negatives, ...positives], inputs: i, ...vivid };
 }
 
 /** Value at the hour closest to `t`, averaged with its neighbours to smooth model noise. */
@@ -169,20 +187,30 @@ function sumBetween(series: number[], times: number[], from: number, to: number)
   return times.reduce((acc, t, k) => (t >= from && t < to ? acc + (series[k] ?? 0) : acc), 0);
 }
 
-export function glowFromForecasts(local: PointForecast, west: PointForecast, sunset: Date, ray: CanvasClouds[] | null = null): GlowForecast {
+/**
+ * The glow at one sunset (or sunrise), `leadDays` days from today. `west` is the cloud out
+ * toward the sun, from the ray; without the ray it falls back to the sky overhead.
+ */
+export function glowFromForecasts(
+  local: PointForecast,
+  west: CanvasClouds | null,
+  sunset: Date,
+  ray: CanvasClouds[] | null = null,
+  leadDays = 0,
+): GlowForecast {
   const t = sunset.getTime();
-  const at = (s: (number | null)[], f = local) => around(s, f.time, t) ?? 0;
+  const at = (s: (number | null)[], times = local.time) => around(s, times, t) ?? 0;
   const rayAtSunset = ray && ray.map((p) => ({ high: around(p.high, p.time, t) ?? 0, mid: around(p.mid, p.time, t) ?? 0 }));
-  return scoreGlow({
+  return withLead(scoreGlow({
     localLow: at(local.cloudLow),
     localMid: at(local.cloudMid),
     localHigh: at(local.cloudHigh),
-    westLow: at(west.cloudLow, west),
-    westMid: at(west.cloudMid, west),
+    westLow: west ? at(west.low, west.time) : at(local.cloudLow),
+    westMid: west ? at(west.mid, west.time) : at(local.cloudMid),
     humidity: at(local.humidity),
     precipProbability: at(local.precipProbability),
     precipAtSunset: at(local.precipitation),
     precipBefore: sumBetween(local.precipitation, local.time, t - 6 * 3600_000, t - 3600_000),
     aod: around(local.aod, local.time, t),
-  }, rayAtSunset);
+  }, rayAtSunset), leadDays);
 }

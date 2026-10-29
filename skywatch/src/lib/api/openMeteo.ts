@@ -1,5 +1,5 @@
 // Open-Meteo: free, no API key. https://open-meteo.com/en/docs
-import { getJson } from './http';
+import { getJson, type FetchOptions } from './http';
 
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const AIR_URL = 'https://air-quality-api.open-meteo.com/v1/air-quality';
@@ -47,7 +47,7 @@ const HOURLY_VARS = [
 
 
 /** Fetches hourly forecasts for several points in one request each (Open-Meteo accepts comma-separated coords). */
-export async function fetchPointForecasts(points: { latitude: number; longitude: number }[]): Promise<PointForecast[]> {
+export async function fetchPointForecasts(points: { latitude: number; longitude: number }[], opts: FetchOptions = {}): Promise<PointForecast[]> {
   const lat = points.map((p) => p.latitude.toFixed(3)).join(',');
   const lon = points.map((p) => p.longitude.toFixed(3)).join(',');
   // A week ahead (plus today) for the 7-day glow outlook. The air-quality model only
@@ -55,9 +55,14 @@ export async function fetchPointForecasts(points: { latitude: number; longitude:
   const common = `latitude=${lat}&longitude=${lon}&timeformat=unixtime&past_days=1`;
 
   const [weather, air] = await Promise.all([
-    getJson<ForecastResponse | ForecastResponse[]>(`${FORECAST_URL}?${common}&forecast_days=8&hourly=${HOURLY_VARS}`, 30_000),
-    // Haze only fine-tunes the score, so a slow answer is not worth waiting for.
-    getJson<AirResponse | AirResponse[]>(`${AIR_URL}?${common}&forecast_days=7&hourly=aerosol_optical_depth`, 12_000).catch(() => null),
+    getJson<ForecastResponse | ForecastResponse[]>(`${FORECAST_URL}?${common}&forecast_days=8&hourly=${HOURLY_VARS}`, { ...opts, timeoutMs: 30_000 }),
+    // Haze only fine-tunes the score, so a slow answer is not worth waiting for; it changes
+    // slowly too, so an earlier answer beats none.
+    getJson<AirResponse | AirResponse[]>(`${AIR_URL}?${common}&forecast_days=7&hourly=aerosol_optical_depth`, {
+      ...opts,
+      timeoutMs: 12_000,
+      staleOnError: true,
+    }).catch(() => null),
   ]);
 
   const weatherList = Array.isArray(weather) ? weather : [weather];
@@ -125,18 +130,23 @@ export async function fetchNightWeather(latitude: number, longitude: number): Pr
   };
 }
 
-export type CanvasClouds = { time: number[]; high: number[]; mid: number[] };
+export type CanvasClouds = { time: number[]; low: number[]; high: number[]; mid: number[] };
 
-type CanvasResponse = { hourly: { time: number[]; cloud_cover_high: number[]; cloud_cover_mid: number[] } };
+type CanvasResponse = { hourly: { time: number[]; cloud_cover_low: number[]; cloud_cover_high: number[]; cloud_cover_mid: number[] } };
 
-/** High and mid cloud only, for many points in one request: the clouds out toward the sunset and the sunrise. */
-export async function fetchCanvasClouds(points: { latitude: number; longitude: number }[]): Promise<CanvasClouds[]> {
+/**
+ * Cloud layers only, for many points in one request: the clouds out toward the sunset and the sunrise.
+ * Low cloud is in too, so the point that checks whether the sun's way in is blocked comes from here
+ * rather than from a full forecast it would mostly not use.
+ */
+export async function fetchCanvasClouds(points: { latitude: number; longitude: number }[], opts: FetchOptions = {}): Promise<CanvasClouds[]> {
   const lat = points.map((p) => p.latitude.toFixed(3)).join(',');
   const lon = points.map((p) => p.longitude.toFixed(3)).join(',');
-  const url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&timeformat=unixtime&past_days=1&forecast_days=8&hourly=cloud_cover_high,cloud_cover_mid`;
-  const data = await getJson<CanvasResponse | CanvasResponse[]>(url, 30_000);
+  const url = `${FORECAST_URL}?latitude=${lat}&longitude=${lon}&timeformat=unixtime&past_days=1&forecast_days=8&hourly=cloud_cover_low,cloud_cover_high,cloud_cover_mid`;
+  const data = await getJson<CanvasResponse | CanvasResponse[]>(url, { ...opts, timeoutMs: 30_000 });
   return (Array.isArray(data) ? data : [data]).map(({ hourly: h }) => ({
     time: h.time.map((t) => t * 1000),
+    low: h.cloud_cover_low,
     high: h.cloud_cover_high,
     mid: h.cloud_cover_mid,
   }));

@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Glass, type Aura } from '../components/Glass';
-import { BellIcon, CalendarIcon, CloseIcon, SunriseIcon } from '../components/Icons';
+import { BellIcon, CalendarIcon, CloseIcon, CompassIcon, SunriseIcon } from '../components/Icons';
 import { Rise } from '../components/Motion';
 import { Text } from '../components/Text';
 import { TonightBackdrop } from '../components/TonightBackdrop';
@@ -14,10 +14,12 @@ import { colors, spacing } from '../constants/theme';
 import type { StringKey } from '../lib/i18n/strings';
 import { useSettings } from '../lib/settings';
 
+// Led by what a member uses on any evening: being in the right place, and hearing about it in time.
 const PERKS: { Icon: typeof BellIcon; title: StringKey; desc: StringKey }[] = [
+  { Icon: CompassIcon, title: 'memberPerkGuide', desc: 'memberPerkGuideDesc' },
+  { Icon: BellIcon, title: 'memberPerkAlerts', desc: 'memberPerkAlertsDesc' },
   { Icon: CalendarIcon, title: 'memberPerkWeek', desc: 'memberPerkWeekDesc' },
   { Icon: SunriseIcon, title: 'memberPerkDawn', desc: 'memberPerkDawnDesc' },
-  { Icon: BellIcon, title: 'memberPerkPush', desc: 'memberPerkPushDesc' },
 ];
 
 type Plan = 'yearly' | 'monthly' | 'lifetime';
@@ -46,6 +48,8 @@ export default function MemberScene() {
     router.back();
   };
   const restore = () => Alert.alert(t('memberRestore'), t('memberDemo'));
+  // No store listing yet, so no terms to link; they come with real payments.
+  const legal = (title: 'memberTerms' | 'memberPrivacy') => Alert.alert(t(title), t('memberLegalSoon'));
 
   return (
     <View style={styles.fill}>
@@ -127,9 +131,13 @@ export default function MemberScene() {
               <Text style={styles.link}>{t('memberRestore')}</Text>
             </Pressable>
             <Text style={styles.linkDot}>·</Text>
-            <Text style={styles.link}>{t('memberTerms')}</Text>
+            <Pressable onPress={() => legal('memberTerms')} hitSlop={6}>
+              <Text style={styles.link}>{t('memberTerms')}</Text>
+            </Pressable>
             <Text style={styles.linkDot}>·</Text>
-            <Text style={styles.link}>{t('memberPrivacy')}</Text>
+            <Pressable onPress={() => legal('memberPrivacy')} hitSlop={6}>
+              <Text style={styles.link}>{t('memberPrivacy')}</Text>
+            </Pressable>
           </View>
           <Text style={styles.demo}>{t('memberDemo')}</Text>
         </View>

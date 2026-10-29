@@ -2,7 +2,7 @@
 // https://www.gdacs.org/gdacsapi/swagger/index.html
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { distanceKm } from '../geo';
-import { getJson } from './http';
+import { getJson, type FetchOptions } from './http';
 
 const GDACS_URL = 'https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?eventlist=TC';
 
@@ -80,8 +80,8 @@ async function updateTracks(cyclones: Cyclone[]): Promise<Map<string, TrackPoint
   return previous;
 }
 
-export async function fetchActiveCyclones(now = new Date()): Promise<Cyclone[]> {
-  const data = await getJson<{ features?: GdacsFeature[] }>(GDACS_URL);
+export async function fetchActiveCyclones(now = new Date(), opts: FetchOptions = {}): Promise<Cyclone[]> {
+  const data = await getJson<{ features?: GdacsFeature[] }>(GDACS_URL, opts);
 
   const cyclones = (data.features ?? [])
     .filter((f) => f.geometry?.type === 'Point')

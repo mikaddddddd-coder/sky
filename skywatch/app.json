@@ -37,7 +37,8 @@
         {
           "locationWhenInUsePermission": "Look Up uses your location to work out sunset times and tonight's sky where you are."
         }
-      ]
+      ],
+      "expo-background-task"
     ],
     "scheme": "skywatch",
     "backgroundColor": "#03040C",

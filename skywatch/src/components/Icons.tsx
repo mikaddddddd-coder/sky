@@ -199,6 +199,15 @@ export function BellIcon(p: IconProps) {
   );
 }
 
+export function CompassIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Circle cx={12} cy={12} r={8.5} />
+      <Path d="M15.5 8.5 13.3 13.3 8.5 15.5 10.7 10.7Z" />
+    </Frame>
+  );
+}
+
 export function LockIcon(p: IconProps) {
   return (
     <Frame {...p}>

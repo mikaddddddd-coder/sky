@@ -1,19 +1,24 @@
-// Local notification scheduling. This is the on-device fallback; a server-side
-// job sending remote pushes will replace it so alerts fire even when the app
-// has not been opened that day.
+// Local notification scheduling. Runs whenever the forecast refreshes: on opening
+// the app, and in the background every few hours (see background.ts), so alerts
+// keep up with the forecast on days the app is not opened.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { formatTime } from './format';
 import type { Lang, StringKey } from './i18n/strings';
-import type { Settings } from './settings';
+import { glowAlertFor, type Settings } from './settings';
 import type { TonightReport } from './sky/report';
 
 const SKY_THRESHOLD = 70;
+// A 晚霞 this likely is worth heading out for, for members who want to hear about more than 火烧云.
+const GOOD_GLOW = 50;
 // Alerts already sent or scheduled, keyed by kind, city and evening (or cyclone),
 // each with the time after which the record can be forgotten.
 const SENT_KEY = 'skywatch.sentAlerts.v1';
 const LEGACY_TYPHOONS_KEY = 'skywatch.notifiedTyphoons';
 const DAY = 24 * 3600_000;
+// About 9pm before a 6am sunrise: late enough to know, early enough to set an alarm.
+const DAWN_NOTICE_MS = 9 * 3600_000;
+const DAWN_LATEST_MS = 5 * 3600_000;
 
 async function loadSent(now: number): Promise<Map<string, number>> {
   const sent = new Map<string, number>(Object.entries(JSON.parse((await AsyncStorage.getItem(SENT_KEY)) ?? '{}')));
@@ -70,6 +75,9 @@ async function schedule(report: TonightReport, settings: Settings, lang: Lang, t
     });
   };
 
+  const { level, leadMin } = glowAlertFor(settings);
+  const worthIt = (g: { fire: boolean; score: number } | null | undefined) => !!g && (g.fire || (level === 'good' && g.score >= GOOD_GLOW));
+
   for (const r of report.cities) {
     const city = r.city.name[lang];
     const sunset = r.sky.sun.sunset;
@@ -77,27 +85,49 @@ async function schedule(report: TonightReport, settings: Settings, lang: Lang, t
     const forgetAt = sunset.getTime() + DAY;
     const beforeSunset = sunset.getTime() > now;
 
-    // Only a 火烧云 is worth a nudge; an ordinary 晚霞 is not. It gets two: one
-    // 2h ahead to plan around, and one 30 min ahead to head outside.
+    // By default only a 火烧云 is worth a nudge; members can ask for a likely 晚霞 too.
+    // The first comes ahead of sunset to plan around (2h unless a member picked otherwise);
+    // a 火烧云 gets a second, 30 min ahead, to head outside.
     // The forecast may already be for tomorrow's sunset, so it keys and times off its own.
     const glowSunset = r.glowSunset;
     const g = r.glow;
-    if (glowSunset.getTime() > now && settings.alerts.glow && g?.fire && g.vividness !== null) {
+    if (glowSunset.getTime() > now && settings.alerts.glow && g && worthIt(g)) {
       const day = glowSunset.toISOString().slice(0, 10);
       const time = formatTime(glowSunset, r.city.timezone, lang);
       await alert(
         `glow:${r.city.id}:${day}`,
-        new Date(glowSunset.getTime() - 2 * 3600_000),
+        new Date(glowSunset.getTime() - leadMin * 60_000),
         glowSunset.getTime() + DAY,
-        t('notifGlowTitle', { city }),
-        t('notifGlowBody', { vivid: g.vividness, pct: g.score, time }),
+        t(g.fire ? 'notifGlowTitle' : 'notifGoodTitle', { city }),
+        g.fire && g.vividness !== null
+          ? t('notifGlowBody', { vivid: g.vividness, pct: g.score, time })
+          : t('notifGoodBody', { pct: g.score, time }),
       );
+      if (g.fire) {
+        await alert(
+          `fire-go:${r.city.id}:${day}`,
+          new Date(glowSunset.getTime() - 30 * 60_000),
+          glowSunset.getTime() + DAY,
+          t('notifFireGoTitle', { city }),
+          t('notifFireGoBody', { time }),
+        );
+      }
+    }
+
+    // Members also hear about a sunrise worth getting up for, the evening before, in time to set an alarm.
+    // Found later than about 1am, it is left alone rather than buzzing in the small hours.
+    const dawn = r.week?.[r.dawnIndex];
+    const dg = dawn?.dawn;
+    if (dawn && dg && dawn.sunrise.getTime() - now > DAWN_LATEST_MS && settings.member && settings.alerts.glow && worthIt(dg)) {
+      const time = formatTime(dawn.sunrise, r.city.timezone, lang);
       await alert(
-        `fire-go:${r.city.id}:${day}`,
-        new Date(glowSunset.getTime() - 30 * 60_000),
-        glowSunset.getTime() + DAY,
-        t('notifFireGoTitle', { city }),
-        t('notifFireGoBody', { time }),
+        `dawn-fire:${r.city.id}:${dawn.sunrise.toISOString().slice(0, 10)}`,
+        new Date(dawn.sunrise.getTime() - DAWN_NOTICE_MS),
+        dawn.sunrise.getTime() + DAY,
+        t(dg.fire ? 'notifDawnFireTitle' : 'notifDawnGoodTitle', { city }),
+        dg.fire && dg.vividness !== null
+          ? t('notifDawnFireBody', { vivid: dg.vividness, pct: dg.score, time })
+          : t('notifDawnGoodBody', { pct: dg.score, time }),
       );
     }
 

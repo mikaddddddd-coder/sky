@@ -3,11 +3,11 @@ import { Alert, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Group, groupStyles, Row } from '../../components/GroupList';
-import { ChevronRightIcon, CycloneIcon, GlobeIcon, SparkleIcon, SunsetIcon } from '../../components/Icons';
+import { BellIcon, ChevronRightIcon, CycloneIcon, GlobeIcon, LockIcon, SlidersIcon, SparkleIcon, SunsetIcon } from '../../components/Icons';
 import { SceneBackground } from '../../components/SceneBackground';
 import { colors, spacing, type } from '../../constants/theme';
 import type { StringKey } from '../../lib/i18n/strings';
-import { useSettings, type Settings } from '../../lib/settings';
+import { glowAlertFor, useSettings, type GlowAlert, type Settings } from '../../lib/settings';
 
 const LANG_OPTIONS: { value: Settings['language']; label: string }[] = [
   { value: 'system', label: '' },
@@ -20,6 +20,12 @@ const ALERTS: { key: keyof Settings['alerts']; title: StringKey; desc: StringKey
   { key: 'sky', title: 'alertSky', desc: 'alertSkyDesc', Icon: SparkleIcon },
   { key: 'typhoon', title: 'alertTyphoon', desc: 'alertTyphoonDesc', Icon: CycloneIcon },
 ];
+
+const LEVELS: { value: GlowAlert['level']; label: StringKey }[] = [
+  { value: 'fire', label: 'alertLevelFire' },
+  { value: 'good', label: 'alertLevelGood' },
+];
+const LEADS: GlowAlert['leadMin'][] = [60, 120, 180];
 
 export default function SettingsScreen() {
   const { settings, update, t, lang } = useSettings();
@@ -39,6 +45,33 @@ export default function SettingsScreen() {
       ...LANG_OPTIONS.map((o) => ({ text: o.label || t('langSystem'), onPress: () => update({ language: o.value }) })),
       { text: t('close'), style: 'cancel' as const },
     ]);
+
+  // Members pick which glows earn an alert and how early; for everyone else the rows show the
+  // defaults behind a lock and lead to the offer.
+  const glowAlert = glowAlertFor(settings);
+  const setGlowAlert = (patch: Partial<GlowAlert>) => update({ glowAlert: { ...settings.glowAlert, ...patch } });
+  const leadLabel = (m: number) => t('alertLeadHours', { h: m / 60 });
+  const pickLevel = () =>
+    settings.member
+      ? Alert.alert(t('alertLevel'), undefined, [
+          ...LEVELS.map((o) => ({ text: t(o.label), onPress: () => setGlowAlert({ level: o.value }) })),
+          { text: t('close'), style: 'cancel' as const },
+        ])
+      : router.push('/member');
+  const pickLead = () =>
+    settings.member
+      ? Alert.alert(t('alertLead'), undefined, [
+          ...LEADS.map((m) => ({ text: leadLabel(m), onPress: () => setGlowAlert({ leadMin: m }) })),
+          { text: t('close'), style: 'cancel' as const },
+        ])
+      : router.push('/member');
+  const memberValue = (text: string) => (
+    <>
+      {!settings.member && <LockIcon color={colors.textDim} size={15} />}
+      <Text style={groupStyles.value}>{text}</Text>
+      <ChevronRightIcon color={colors.textDim} size={18} />
+    </>
+  );
 
   return (
     <View style={styles.safe}>
@@ -73,6 +106,17 @@ export default function SettingsScreen() {
               </Row>
             ))}
           </Group>
+
+          {settings.alerts.glow && (
+            <Group title={t('alertGlowOptions')} footer={t('alertGlowOptionsNote')}>
+              <Row icon={<SlidersIcon color={colors.text} />} label={t('alertLevel')} onPress={pickLevel}>
+                {memberValue(t(LEVELS.find((o) => o.value === glowAlert.level)!.label))}
+              </Row>
+              <Row icon={<BellIcon color={colors.text} />} label={t('alertLead')} onPress={pickLead}>
+                {memberValue(leadLabel(glowAlert.leadMin))}
+              </Row>
+            </Group>
+          )}
         </ScrollView>
       </SafeAreaView>
     </View>
