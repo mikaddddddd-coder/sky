@@ -3,6 +3,7 @@
 // keep up with the forecast on days the app is not opened.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import { ASK_AFTER_MS, FEEDBACK_CATEGORY, feedbackAskFor, isAnswered, registerFeedbackCategory } from './feedback';
 import { formatTime } from './format';
 import type { Lang, StringKey } from './i18n/strings';
 import { glowAlertFor, type Settings } from './settings';
@@ -65,18 +66,32 @@ async function schedule(report: TonightReport, settings: Settings, lang: Lang, t
   // whose time is still ahead is simply scheduled again; one whose time has
   // passed goes out right away, but only if it was never sent before, so
   // refreshing in the last hours before sunset does not repeat it.
-  const alert = async (key: string, date: Date, forgetAt: number, title: string, body: string) => {
+  const alert = async (key: string, date: Date, forgetAt: number, title: string, body: string, extra?: Partial<Notifications.NotificationContentInput>) => {
     const due = date.getTime() <= now;
     if (due && sent.has(key)) return;
     sent.set(key, forgetAt);
     await Notifications.scheduleNotificationAsync({
-      content: { title, body },
+      content: { title, body, ...extra },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(due ? now + 5_000 : date.getTime()) },
     });
   };
 
   const { level, leadMin } = glowAlertFor(settings);
   const worthIt = (g: { fire: boolean; score: number } | null | undefined) => !!g && (g.fire || (level === 'good' && g.score >= GOOD_GLOW));
+
+  // After sunset, ask how the sky turned out: for the first followed city only, so it stays one question an evening.
+  const first = report.cities[0];
+  const ask = first && settings.alerts.feedback !== false ? feedbackAskFor(first, first.city.name[lang]) : null;
+  // Kept through the minutes after sunset too (the forecast rolls to tomorrow only later), since every refresh
+  // cancels and reschedules; once its time has passed it goes out at most once, like any alert.
+  if (ask && !(await isAnswered(ask.key))) {
+    await registerFeedbackCategory(t);
+    const at = Date.parse(ask.sunset) + ASK_AFTER_MS;
+    await alert(`feedback:${ask.key}`, new Date(at), at + DAY, t('notifFeedbackTitle', { city: ask.cityName }), t('notifFeedbackBody'), {
+      categoryIdentifier: FEEDBACK_CATEGORY,
+      data: { feedbackAsk: ask },
+    });
+  }
 
   for (const r of report.cities) {
     const city = r.city.name[lang];
