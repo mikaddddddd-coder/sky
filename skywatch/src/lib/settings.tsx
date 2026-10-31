@@ -36,6 +36,12 @@ export type Settings = {
 export const PAYMENTS_ENABLED = false;
 const withAccess = (s: Settings): Settings => (PAYMENTS_ENABLED ? s : { ...s, member: true });
 
+/**
+ * How many cities can be followed at once. Each brings a handful of alerts and iOS keeps at most
+ * 64 pending, so this also keeps them all scheduled. More cities may become a paid unlock later.
+ */
+export const MAX_CITIES = 5;
+
 export type GlowAlert = { level: 'fire' | 'good'; leadMin: 60 | 120 | 180 };
 export const DEFAULT_GLOW_ALERT: GlowAlert = { level: 'fire', leadMin: 120 };
 /** What actually applies: a member's own choice, or the defaults for everyone else. */

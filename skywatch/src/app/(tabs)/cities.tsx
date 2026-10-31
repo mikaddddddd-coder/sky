@@ -8,7 +8,7 @@ import { SceneBackground } from '../../components/SceneBackground';
 import { CITIES, HERE_ID, type City } from '../../constants/cities';
 import { colors, spacing, type } from '../../constants/theme';
 import { cityFromPlace, locateHere, placeRegion, searchPlaces, type Place } from '../../lib/places';
-import { useSettings } from '../../lib/settings';
+import { MAX_CITIES, useSettings } from '../../lib/settings';
 
 type SearchState = { status: 'idle' | 'loading' | 'done' | 'error'; results: Place[] };
 
@@ -19,10 +19,13 @@ export default function CitiesScreen() {
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState<string | null>(null);
   const [adding, setAdding] = useState<number | null>(null);
+  // Set when adding a city is refused because the list is full; cleared once one is turned off.
+  const [limitHit, setLimitHit] = useState(false);
 
   const here = settings.customCities.find((c) => c.id === HERE_ID);
   const searched = settings.customCities.filter((c) => c.source === 'search');
   const isOn = (id: string) => settings.cityIds.includes(id);
+  const full = settings.cityIds.length >= MAX_CITIES;
 
   // Search as you type, after a short pause, cancelling the previous request.
   useEffect(() => {
@@ -47,11 +50,14 @@ export default function CitiesScreen() {
   const toggle = (id: string) => {
     const selected = isOn(id);
     if (selected && settings.cityIds.length === 1) return; // keep at least one city
+    if (!selected && full) return setLimitHit(true);
+    setLimitHit(false);
     update({ cityIds: selected ? settings.cityIds.filter((c) => c !== id) : [...settings.cityIds, id] });
   };
 
   const followLocation = async () => {
     if (here && isOn(HERE_ID)) return toggle(HERE_ID);
+    if (full) return setLimitHit(true);
     setLocating(true);
     setLocateError(null);
     const res = await locateHere(true);
@@ -66,6 +72,7 @@ export default function CitiesScreen() {
 
   const add = async (place: Place) => {
     const id = `place-${place.id}`;
+    if (full && !isOn(id)) return setLimitHit(true);
     if (settings.customCities.some((c) => c.id === id)) {
       if (!isOn(id)) toggle(id);
     } else {
@@ -78,6 +85,7 @@ export default function CitiesScreen() {
   };
 
   const remove = (city: City) => {
+    setLimitHit(false);
     const ids = settings.cityIds.filter((id) => id !== city.id);
     update({
       customCities: settings.customCities.filter((c) => c.id !== city.id),
@@ -127,6 +135,8 @@ export default function CitiesScreen() {
             />
             {search.status === 'loading' && <ActivityIndicator color={colors.textDim} size="small" />}
           </View>
+
+          {limitHit && <Text style={styles.note}>{t('cityLimit', { max: MAX_CITIES })}</Text>}
 
           {query.trim().length >= 2 && search.status !== 'loading' && (
             <>

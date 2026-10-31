@@ -3,9 +3,13 @@ import { StatusBar } from 'expo-status-bar';
 import { Platform } from 'react-native';
 // Loaded first so the background refresh task is defined before any screen.
 import '../lib/background';
+import { ErrorScreen } from '../components/ErrorScreen';
 import { ReportProvider } from '../lib/report';
 import { SettingsProvider } from '../lib/settings';
 import { useFeedbackResponses } from '../lib/useFeedbackResponses';
+
+// A screen that throws shows this instead of going blank.
+export { ErrorScreen as ErrorBoundary };
 
 function FeedbackResponses() {
   useFeedbackResponses();
