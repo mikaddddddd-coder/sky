@@ -65,20 +65,20 @@ export const groupStyles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,255,255,0.1)',
   },
-  value: { fontSize: 16, color: colors.textDim },
+  value: { fontSize: 14, color: colors.textDim },
 });
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.sm + 2 },
-  title: { fontSize: 22, fontWeight: '700', letterSpacing: -0.3, color: colors.text, marginLeft: 2 },
+  wrap: { gap: spacing.sm },
+  title: { fontSize: 16, fontWeight: '600', letterSpacing: -0.2, color: colors.text, marginLeft: 2 },
   group: groupStyles.panel,
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.12)' },
-  row: { flexDirection: 'row', alignItems: 'center', minHeight: 60, paddingHorizontal: spacing.md + 2, paddingVertical: spacing.sm, gap: spacing.md },
+  row: { flexDirection: 'row', alignItems: 'center', minHeight: 48, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: spacing.sm + 4 },
   rowPressed: { backgroundColor: 'rgba(255,255,255,0.06)' },
   icon: { width: 24, alignItems: 'center' },
   text: { flex: 1, gap: 2 },
-  label: { fontSize: 17, fontWeight: '500', color: colors.text },
+  label: { fontSize: 15, fontWeight: '500', color: colors.text },
   sub: { ...type.caption, color: colors.textDim },
   right: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  footer: { ...type.caption, color: colors.textDim, marginHorizontal: spacing.xs, lineHeight: 19 },
+  footer: { ...type.caption, fontSize: 11, lineHeight: 16, color: colors.textDim, marginHorizontal: spacing.xs },
 });

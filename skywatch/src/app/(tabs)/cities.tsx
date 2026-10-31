@@ -166,7 +166,7 @@ export default function CitiesScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: spacing.md, gap: spacing.lg, paddingBottom: 120 },
-  title: { ...type.largeTitle, color: colors.text, marginTop: spacing.sm },
+  title: { ...type.largeTitle, fontSize: 26, color: colors.text, marginTop: spacing.sm },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md + 2, minHeight: 52 },
   input: { flex: 1, fontSize: 17, color: colors.text, paddingVertical: 10 },
   remove: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.08)' },
