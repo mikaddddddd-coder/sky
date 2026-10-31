@@ -41,6 +41,8 @@ export type FeedbackAsk = {
   lat: number;
   lon: number;
   sunset: string;
+  /** The city's time zone, for showing the sunset time on the question page. */
+  timezone?: string;
   why: 'score' | 'sample';
   forecast: Pick<GlowForecast, 'score' | 'vividness' | 'edgeKm' | 'fire' | 'leadDays' | 'reasons' | 'inputs'>;
 };
@@ -65,6 +67,7 @@ export function feedbackAskFor(r: CityReport, cityName: string): FeedbackAsk | n
     lat: Math.round(r.city.latitude * 100) / 100,
     lon: Math.round(r.city.longitude * 100) / 100,
     sunset,
+    timezone: r.city.timezone,
     why,
     forecast: { score, vividness, edgeKm, fire, leadDays, reasons, inputs },
   };
