@@ -9,7 +9,6 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.mikali.lookup",
-      "buildNumber": "1",
       "infoPlist": {
         "CFBundleAllowMixedLocalizations": true,
         "ITSAppUsesNonExemptEncryption": false
@@ -40,7 +39,15 @@
           "locationWhenInUsePermission": "Look Up uses your location to work out sunset times and tonight's sky where you are."
         }
       ],
-      "expo-background-task"
+      "expo-background-task",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "backgroundColor": "#03040C"
+        }
+      ]
     ],
     "scheme": "skywatch",
     "backgroundColor": "#03040C",
