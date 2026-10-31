@@ -45,7 +45,13 @@
         {
           "image": "./assets/splash-icon.png",
           "imageWidth": 200,
-          "backgroundColor": "#03040C"
+          "backgroundColor": "#03040C",
+          "ios": {
+            "image": "./assets/opening.png",
+            "enableFullScreenImage_legacy": true,
+            "resizeMode": "cover",
+            "backgroundColor": "#000000"
+          }
         }
       ],
       [

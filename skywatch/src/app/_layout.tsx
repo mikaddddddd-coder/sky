@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 // Loaded first so the background refresh task is defined before any screen.
 import '../lib/background';
 import { ErrorScreen } from '../components/ErrorScreen';
+import { OpeningScreen } from '../components/OpeningScreen';
 import { ReportProvider } from '../lib/report';
 import { SettingsProvider } from '../lib/settings';
 import { useFeedbackResponses } from '../lib/useFeedbackResponses';
@@ -33,6 +34,8 @@ export default function RootLayout() {
           <Stack.Screen name="member" options={{ animation: 'fade' }} />
           <Stack.Screen name="feedback" options={{ animation: 'fade' }} />
         </Stack>
+        {/* Over everything on a cold start, until its words have come and gone. */}
+        <OpeningScreen />
       </ReportProvider>
     </SettingsProvider>
   );
