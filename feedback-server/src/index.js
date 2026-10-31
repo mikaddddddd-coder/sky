@@ -4,7 +4,7 @@
 // No IP addresses or accounts are stored: only a random id the app makes on install.
 
 // The address shown on the privacy page; App Store review needs a way to reach you.
-const CONTACT_EMAIL = 'REPLACE_ME@example.com';
+const CONTACT_EMAIL = 'lmx901229@sina.com';
 const MAX_BODY = 16 * 1024;
 const ISO = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/;
 
