@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLocales } from 'expo-localization';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { DEFAULT_CITY_IDS, type City } from '../constants/cities';
+import { toSimplified } from './i18n/hanzi';
 import { translate, type Lang, type StringKey } from './i18n/strings';
 
 export type Settings = {
@@ -70,8 +71,17 @@ export const resolveLang = (s: Settings): Lang => (s.language === 'system' ? sys
 /** The saved settings, read straight from storage, for work done outside the app's screens. */
 export async function loadSettings(): Promise<Settings> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
-  return withAccess(raw ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) } : DEFAULTS);
+  if (!raw) return withAccess(DEFAULTS);
+  const saved = { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) };
+  return withAccess({ ...saved, customCities: saved.customCities.map(simplifyCity) });
 }
+
+/** Cities saved before search simplified their names may still carry traditional ones. */
+const simplifyCity = (c: City): City => ({
+  ...c,
+  name: { ...c.name, zh: toSimplified(c.name.zh) },
+  region: c.region && toSimplified(c.region),
+});
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
