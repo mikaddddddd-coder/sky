@@ -55,6 +55,11 @@ const STORAGE_KEY = 'skywatch.settings.v1';
 
 type SettingsContextValue = {
   settings: Settings;
+  /**
+   * False until the saved settings are read. Until then `settings` holds the defaults, so
+   * nothing should be fetched, scheduled or saved on their behalf.
+   */
+  ready: boolean;
   update: (patch: Partial<Settings>) => void;
   lang: Lang;
   t: (key: StringKey, vars?: Record<string, string | number>) => string;
@@ -85,9 +90,13 @@ const simplifyCity = (c: City): City => ({
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    loadSettings().then(setSettings).catch(() => {});
+    loadSettings()
+      .then(setSettings)
+      .catch(() => {})
+      .finally(() => setReady(true));
   }, []);
 
   const update = useCallback((patch: Partial<Settings>) => {
@@ -100,8 +109,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<SettingsContextValue>(() => {
     const lang = resolveLang(settings);
-    return { settings: withAccess(settings), update, lang, t: (key, vars) => translate(lang, key, vars) };
-  }, [settings, update]);
+    return { settings: withAccess(settings), ready, update, lang, t: (key, vars) => translate(lang, key, vars) };
+  }, [settings, ready, update]);
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 }

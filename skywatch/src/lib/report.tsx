@@ -54,7 +54,9 @@ function keepForecasts(next: TonightReport, prev: TonightReport): TonightReport 
 
 // One shared report so the Tonight list and the detail scenes show the same numbers.
 export function ReportProvider({ children }: { children: ReactNode }) {
-  const { settings, update, lang, t } = useSettings();
+  // Nothing runs on the default cities and alerts while the saved settings are still being read:
+  // a report built on them would schedule alerts, typhoons included, for cities the user never chose.
+  const { settings, ready, update, lang, t } = useSettings();
   const [report, setReport] = useState<TonightReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,25 +86,26 @@ export function ReportProvider({ children }: { children: ReactNode }) {
 
   // Show the saved report for these cities until the network answers; never over a fresher one.
   useEffect(() => {
+    if (!ready) return;
     loadReport(cityKey)
       .then((saved) => saved && setReport((prev) => prev ?? saved))
       .catch(() => {});
-  }, [cityKey]);
+  }, [ready, cityKey]);
 
   useEffect(() => {
-    load(false);
-  }, [load]);
+    if (ready) load(false);
+  }, [ready, load]);
 
   const anyAlert = settings.alerts.glow || settings.alerts.sky || settings.alerts.typhoon || settings.alerts.feedback !== false;
   useEffect(() => {
-    syncBackgroundRefresh(anyAlert);
-  }, [anyAlert]);
+    if (ready) syncBackgroundRefresh(anyAlert);
+  }, [ready, anyAlert]);
 
   // Once per launch, move the current-location city if the device has moved.
   const followsHere = settings.cityIds.includes(HERE_ID);
   const relocated = useRef(false);
   useEffect(() => {
-    if (!followsHere || relocated.current) return;
+    if (!ready || !followsHere || relocated.current) return;
     relocated.current = true;
     locateHere(false).then((res) => {
       if (!('city' in res)) return;
@@ -111,7 +114,7 @@ export function ReportProvider({ children }: { children: ReactNode }) {
       update({ customCities: [...settings.customCities.filter((c) => c.id !== HERE_ID), res.city] });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [followsHere]);
+  }, [ready, followsHere]);
 
   return <ReportContext.Provider value={{ report, loading, error, refresh }}>{children}</ReportContext.Provider>;
 }
