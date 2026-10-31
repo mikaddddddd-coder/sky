@@ -90,10 +90,10 @@ const PRIVACY = `<!doctype html>
 </head>
 <body>
 <h1>天色 · Look Up 隐私政策</h1>
-<p class="dim">更新于 2026 年 10 月 30 日</p>
+<p class="dim">更新于 2026 年 10 月 31 日</p>
 <p>天色不需要注册账号，不投放广告，不追踪你在其他 App 或网站上的行为，也不出售任何数据。</p>
 <h2>位置</h2>
-<p>如果你允许，天色会读取你的大致位置，用来计算当地的日落时间和今晚的天象。位置只用于这一目的，保存在你的手机上。</p>
+<p>如果你允许，天色会读取你的位置，用来计算当地的日落时间和今晚的天象。位置保存在你的手机上；离开手机的只有两种情况：查询天气时发给 Open-Meteo 的经纬度（见下文「天气数据」），以及你回答日落后回访时，连同回答一起发给我们的约 1 公里精度的坐标（见下文「日落后回访」）。</p>
 <h2>天气数据</h2>
 <p>为了获取预报，App 会把你关注的城市（或你当前位置）的经纬度发送给 Open-Meteo（open-meteo.com），热带气旋信息来自 GDACS（gdacs.org）。这些请求不包含任何能识别你身份的信息。</p>
 <h2>日落后回访</h2>
@@ -112,10 +112,10 @@ const PRIVACY = `<!doctype html>
 <hr>
 
 <h1 lang="en">Look Up Privacy Policy</h1>
-<p class="dim">Updated 30 October 2026</p>
+<p class="dim">Updated 31 October 2026</p>
 <p>Look Up needs no account, shows no ads, does not track you across other apps or websites, and never sells data.</p>
 <h2>Location</h2>
-<p>If you allow it, Look Up reads your approximate location to work out local sunset times and tonight's sky. It is used only for that and stays on your phone.</p>
+<p>If you allow it, Look Up reads your location to work out local sunset times and tonight's sky. It is kept on your phone and leaves it only in two ways: as coordinates sent to Open-Meteo to fetch the forecast (see Weather data), and, rounded to about 1 km, together with your answer when you reply to the after-sunset check-in (see below).</p>
 <h2>Weather data</h2>
 <p>To fetch forecasts, the app sends the coordinates of the cities you follow (or of your current location) to Open-Meteo (open-meteo.com). Tropical cyclone data comes from GDACS (gdacs.org). These requests carry nothing that identifies you.</p>
 <h2>After-sunset check-in</h2>
