@@ -47,7 +47,29 @@
           "imageWidth": 200,
           "backgroundColor": "#03040C"
         }
-      ]
+      ],
+      [
+        "expo-widgets",
+        {
+          "widgets": [
+            {
+              "name": "TonightWidget",
+              "displayName": "天色 Look Up",
+              "description": "Tonight's sunset glow and tomorrow's sunrise glow",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium",
+                  "accessoryRectangular",
+                  "accessoryInline"
+                ],
+                "initialLayout": "./src/widgets/TonightWidget.tsx"
+              }
+            }
+          ]
+        }
+      ],
+      "expo-asset"
     ],
     "scheme": "skywatch",
     "backgroundColor": "#03040C",

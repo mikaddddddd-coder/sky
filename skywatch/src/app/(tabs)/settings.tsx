@@ -3,7 +3,7 @@ import { Alert, Linking, ScrollView, StyleSheet, Switch, View } from 'react-nati
 import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Group, groupStyles, Row } from '../../components/GroupList';
-import { BellIcon, ChevronRightIcon, CloudIcon, CycloneIcon, GlobeIcon, LockIcon, SlidersIcon, SparkleIcon, SunsetIcon } from '../../components/Icons';
+import { BellIcon, ChevronRightIcon, CloudIcon, CycloneIcon, GlobeIcon, LockIcon, SlidersIcon, SparkleIcon, SunsetIcon, TimerIcon } from '../../components/Icons';
 import { SceneBackground } from '../../components/SceneBackground';
 import { colors, spacing, type } from '../../constants/theme';
 import type { StringKey } from '../../lib/i18n/strings';
@@ -22,6 +22,7 @@ const ALERTS: { key: keyof Settings['alerts']; title: StringKey; desc: StringKey
   { key: 'sky', title: 'alertSky', desc: 'alertSkyDesc', Icon: SparkleIcon },
   { key: 'typhoon', title: 'alertTyphoon', desc: 'alertTyphoonDesc', Icon: CycloneIcon },
   { key: 'feedback', title: 'alertFeedback', desc: 'alertFeedbackDesc', Icon: CloudIcon },
+  { key: 'island', title: 'alertIsland', desc: 'alertIslandDesc', Icon: TimerIcon },
 ];
 
 const LEVELS: { value: GlowAlert['level']; label: StringKey }[] = [
@@ -137,5 +138,5 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: spacing.md, gap: spacing.lg, paddingBottom: 120 },
-  title: { ...type.largeTitle, color: colors.text, marginTop: spacing.sm },
+  title: { ...type.largeTitle, fontSize: 26, color: colors.text, marginTop: spacing.sm },
 });

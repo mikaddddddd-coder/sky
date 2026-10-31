@@ -6,6 +6,7 @@ import { syncBackgroundRefresh } from './background';
 import { scheduleTonightAlerts } from './notifications';
 import { locateHere } from './places';
 import { useSettings, type Settings } from './settings';
+import { syncWidgets } from './widgets';
 import { buildTonightReport, type CityReport, type TonightReport } from './sky/report';
 
 type ReportContextValue = {
@@ -71,6 +72,7 @@ export function ReportProvider({ children }: { children: ReactNode }) {
       setReport((prev) => (prev ? keepForecasts(next, prev) : next));
       saveReport(cityKey, next).catch(() => {});
       scheduleTonightAlerts(next, settings, lang, t).catch(() => {});
+      syncWidgets(next, settings, lang, t, { foreground: true }).catch(() => {});
     } catch (e) {
       setError((e as Error).message);
     } finally {

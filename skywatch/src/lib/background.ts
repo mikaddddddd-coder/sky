@@ -10,6 +10,7 @@ import { scheduleTonightAlerts } from './notifications';
 import { citiesFor, cityKeyFor, saveReport } from './report';
 import { loadSettings, resolveLang } from './settings';
 import { buildTonightReport } from './sky/report';
+import { syncWidgets } from './widgets';
 
 const TASK = 'skywatch.refresh';
 // A floor, not a schedule: iOS stretches it as it sees fit.
@@ -28,7 +29,9 @@ TaskManager.defineTask(TASK, async () => {
     const report = await buildTonightReport(cities, new Date(), { fresh: true });
     await saveReport(cityKeyFor(cities), report);
     const lang = resolveLang(settings);
-    await scheduleTonightAlerts(report, settings, lang, (key, vars) => translate(lang, key, vars));
+    const t = (key: Parameters<typeof translate>[1], vars?: Record<string, string | number>) => translate(lang, key, vars);
+    await scheduleTonightAlerts(report, settings, lang, t);
+    await syncWidgets(report, settings, lang, t, { foreground: false });
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch {
     return BackgroundTask.BackgroundTaskResult.Failed;

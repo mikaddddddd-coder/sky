@@ -48,6 +48,12 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 
 type T = (key: StringKey, vars?: Record<string, string | number>) => string;
 
+/** Whether a glow earns an alert: a 火烧云 by default, or also a likely 晚霞 for members who ask. */
+export function glowWorthAlert(g: { fire: boolean; score: number } | null | undefined, settings: Settings) {
+  const { level } = glowAlertFor(settings);
+  return !!g && (g.fire || (level === 'good' && g.score >= GOOD_GLOW));
+}
+
 // Runs one at a time, so two quick refreshes cannot both miss the sent record.
 let queue: Promise<void> = Promise.resolve();
 
@@ -76,8 +82,8 @@ async function schedule(report: TonightReport, settings: Settings, lang: Lang, t
     });
   };
 
-  const { level, leadMin } = glowAlertFor(settings);
-  const worthIt = (g: { fire: boolean; score: number } | null | undefined) => !!g && (g.fire || (level === 'good' && g.score >= GOOD_GLOW));
+  const { leadMin } = glowAlertFor(settings);
+  const worthIt = (g: { fire: boolean; score: number } | null | undefined) => glowWorthAlert(g, settings);
 
   // After sunset, ask how the sky turned out: for the first followed city only, so it stays one question an evening.
   const first = report.cities[0];

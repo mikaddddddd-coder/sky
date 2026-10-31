@@ -199,6 +199,16 @@ export function BellIcon(p: IconProps) {
   );
 }
 
+export function TimerIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Path d="M12 21a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15Z" />
+      <Path d="M12 9.5v4l2.5 1.5" />
+      <Path d="M10 2.5h4" />
+    </Frame>
+  );
+}
+
 export function CompassIcon(p: IconProps) {
   return (
     <Frame {...p}>
