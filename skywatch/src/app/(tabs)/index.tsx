@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { memo, useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, RefreshControl, ScrollView, StyleSheet, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
 import { Text } from '../../components/Text';
+import { CheckInCard } from '../../components/CheckInCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Glass, type Aura } from '../../components/Glass';
 import { GlowOrb } from '../../components/GlowOrb';
@@ -298,13 +299,15 @@ function TyphoonCard({ r, count, onPress }: { r: CityReport; count: number; onPr
 }
 
 /** Everything about one city's evening, as one page of the pager. */
-const CityPage = memo(function CityPage({ r, count, onOpen }: { r: CityReport; count: number; onOpen: (cityId: string, path: ScenePath) => void }) {
+const CityPage = memo(function CityPage({ r, count, first, onOpen }: { r: CityReport; count: number; first: boolean; onOpen: (cityId: string, path: ScenePath) => void }) {
   const open = (path: ScenePath) => onOpen(r.city.id, path);
   return (
     <View style={styles.stack}>
       <Rise>
         <CityHeader r={r} />
       </Rise>
+      {/* After sunset, the evening's question; only on the first city, like its notification. */}
+      {first && <CheckInCard r={r} />}
       <Rise delay={50}>
         <GlowCard r={r} />
       </Rise>
@@ -425,7 +428,7 @@ export default function TonightScreen() {
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={loading && !!report} onRefresh={refresh} tintColor={colors.text} />}
               >
-                <CityPage r={r} count={report?.activeCyclones.length ?? 0} onOpen={openScene} />
+                <CityPage r={r} count={report?.activeCyclones.length ?? 0} first={i === 0} onOpen={openScene} />
                 <Text style={styles.footer}>{t('dataSource')}</Text>
               </ScrollView>
             ) : (

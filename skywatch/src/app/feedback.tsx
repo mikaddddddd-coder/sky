@@ -1,27 +1,21 @@
 // The after-sunset question, opened by tapping its notification: three answers,
 // one tap, then a thank-you. The buttons on the notification do the same without this page.
-// Each answer carries a little swatch of that sky, so they read at a glance.
+// Each answer carries a little swatch of that sky (constants/feedbackSkies), so they read at a glance.
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseButton, useCloseButtonClearance } from '../components/CloseButton';
-import { Glass, type Aura } from '../components/Glass';
+import { Glass } from '../components/Glass';
 import { Rise } from '../components/Motion';
 import { Text } from '../components/Text';
 import { TonightBackdrop } from '../components/TonightBackdrop';
+import { FEEDBACK_SKIES } from '../constants/feedbackSkies';
 import { colors, spacing, type } from '../constants/theme';
 import { RATINGS, submitFeedback, type FeedbackAsk, type Rating } from '../lib/feedback';
 import { formatTime } from '../lib/format';
-import type { StringKey } from '../lib/i18n/strings';
 import { useSettings } from '../lib/settings';
-
-const SKIES: Record<Rating, { swatch: readonly [string, string, ...string[]]; desc: StringKey; aura: Aura }> = {
-  0: { swatch: ['#2A3050', '#4A5274', '#6B7290'], desc: 'feedbackNoneDesc', aura: { color: '#8FA8FF', x: 0.1, y: 0.5, strength: 0.1 } },
-  1: { swatch: ['#2E3166', '#A86A8C', '#F0B184'], desc: 'feedbackSomeDesc', aura: { color: '#FFB86B', x: 0.1, y: 0.5, strength: 0.2 } },
-  2: { swatch: ['#4A1838', '#D9422F', '#FFB25C'], desc: 'feedbackFireDesc', aura: { color: '#FF5A36', x: 0.1, y: 0.5, strength: 0.32 } },
-};
 
 export default function FeedbackScene() {
   const { t, lang } = useSettings();
@@ -49,7 +43,7 @@ export default function FeedbackScene() {
       <SafeAreaView style={[styles.fill, styles.page, { paddingBottom: clearance }]}>
         {picked !== null || !ask ? (
           <Rise style={styles.thanks}>
-            {picked !== null && <LinearGradient colors={SKIES[picked].swatch} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.thanksSwatch} />}
+            {picked !== null && <LinearGradient colors={FEEDBACK_SKIES[picked].swatch} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.thanksSwatch} />}
             <Text style={styles.title}>{t('feedbackThanks')}</Text>
             <Text style={styles.sub}>{t('feedbackThanksSub')}</Text>
           </Rise>
@@ -61,11 +55,11 @@ export default function FeedbackScene() {
             </Rise>
             <Rise delay={80} style={styles.answers}>
               {RATINGS.map((r) => (
-                <Glass key={r.value} onPress={() => answer(r.value)} aura={SKIES[r.value].aura} radius={20} contentStyle={styles.answer}>
-                  <LinearGradient colors={SKIES[r.value].swatch} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.swatch} />
+                <Glass key={r.value} onPress={() => answer(r.value)} aura={FEEDBACK_SKIES[r.value].aura} radius={20} contentStyle={styles.answer}>
+                  <LinearGradient colors={FEEDBACK_SKIES[r.value].swatch} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.swatch} />
                   <View style={styles.answerText}>
                     <Text style={styles.answerLabel}>{t(r.label)}</Text>
-                    <Text style={styles.answerDesc}>{t(SKIES[r.value].desc)}</Text>
+                    <Text style={styles.answerDesc}>{t(FEEDBACK_SKIES[r.value].desc)}</Text>
                   </View>
                 </Glass>
               ))}

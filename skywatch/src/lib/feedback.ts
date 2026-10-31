@@ -53,9 +53,24 @@ function dayNumber(iso: string) {
 
 /** The question to ask about this city's coming sunset, or null if this evening is skipped. */
 export function feedbackAskFor(r: CityReport, cityName: string): FeedbackAsk | null {
-  const g = r.glow;
-  if (!g) return null;
-  const sunset = r.glowSunset.toISOString();
+  return r.glow ? askFor(r, cityName, r.glow, r.glowSunset) : null;
+}
+
+// The Tonight page asks from a little after sunset (once the colour has had its moment)
+// until late in the evening; after that the evening is left alone.
+const CARD_UNTIL_MS = 6 * 3600_000;
+
+/**
+ * The question for an evening whose sunset has just passed, for the card on the Tonight page.
+ * By then the forecast has rolled on to tomorrow, so the evening comes from the week.
+ */
+export function eveningAskFor(r: CityReport, cityName: string, now: number): FeedbackAsk | null {
+  const day = r.week?.find((d) => now - d.sunset.getTime() >= ASK_AFTER_MS && now - d.sunset.getTime() < CARD_UNTIL_MS);
+  return day?.dusk ? askFor(r, cityName, day.dusk, day.sunset) : null;
+}
+
+function askFor(r: CityReport, cityName: string, g: GlowForecast, sunsetAt: Date): FeedbackAsk | null {
+  const sunset = sunsetAt.toISOString();
   const why = g.score >= ASK_SCORE ? 'score' : dayNumber(sunset) % SAMPLE_EVERY === 0 ? 'sample' : null;
   if (!why) return null;
   const { score, vividness, edgeKm, fire, leadDays, reasons, inputs } = g;
@@ -103,6 +118,8 @@ export async function submitFeedback(ask: FeedbackAsk, rating: Rating, lang: str
   const answered: string[] = JSON.parse((await AsyncStorage.getItem(ANSWERED_KEY)) ?? '[]');
   if (answered.includes(ask.key)) return;
   await AsyncStorage.setItem(ANSWERED_KEY, JSON.stringify([...answered, ask.key].slice(-60)));
+  // Answered here, so the notification for the same evening has nothing left to ask.
+  await withdrawNotification(ask.key).catch(() => {});
   const entry = {
     ...ask,
     rating,
@@ -114,6 +131,30 @@ export async function submitFeedback(ask: FeedbackAsk, rating: Rating, lang: str
   const queue: unknown[] = JSON.parse((await AsyncStorage.getItem(QUEUE_KEY)) ?? '[]');
   await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify([...queue, entry]));
   await flushFeedback();
+}
+
+/** Cancels the evening's question if it is still to come, and clears it if it already arrived. */
+async function withdrawNotification(key: string) {
+  const isThis = (data: unknown) => (data as { feedbackAsk?: FeedbackAsk } | undefined)?.feedbackAsk?.key === key;
+  for (const n of await Notifications.getAllScheduledNotificationsAsync()) {
+    if (isThis(n.content.data)) await Notifications.cancelScheduledNotificationAsync(n.identifier);
+  }
+  for (const n of await Notifications.getPresentedNotificationsAsync()) {
+    if (isThis(n.request.content.data)) await Notifications.dismissNotificationAsync(n.request.identifier);
+  }
+}
+
+const DISMISSED_KEY = 'skywatch.feedbackDismissed.v1';
+
+export async function isDismissed(key: string): Promise<boolean> {
+  const dismissed: string[] = JSON.parse((await AsyncStorage.getItem(DISMISSED_KEY)) ?? '[]');
+  return dismissed.includes(key);
+}
+
+/** Closing the card on the Tonight page leaves that evening unasked there; the notification stays. */
+export async function dismissAsk(key: string) {
+  const dismissed: string[] = JSON.parse((await AsyncStorage.getItem(DISMISSED_KEY)) ?? '[]');
+  if (!dismissed.includes(key)) await AsyncStorage.setItem(DISMISSED_KEY, JSON.stringify([...dismissed, key].slice(-60)));
 }
 
 let flushing: Promise<void> | null = null;

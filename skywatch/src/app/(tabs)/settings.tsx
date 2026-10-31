@@ -21,7 +21,6 @@ const ALERTS: { key: keyof Settings['alerts']; title: StringKey; desc: StringKey
   { key: 'glow', title: 'alertGlow', desc: 'alertGlowDesc', Icon: SunsetIcon },
   { key: 'sky', title: 'alertSky', desc: 'alertSkyDesc', Icon: SparkleIcon },
   { key: 'typhoon', title: 'alertTyphoon', desc: 'alertTyphoonDesc', Icon: CycloneIcon },
-  { key: 'feedback', title: 'alertFeedback', desc: 'alertFeedbackDesc', Icon: CloudIcon },
   { key: 'island', title: 'alertIsland', desc: 'alertIslandDesc', Icon: TimerIcon },
 ];
 
@@ -123,6 +122,18 @@ export default function SettingsScreen() {
               </Row>
             </Group>
           )}
+
+          {/* Not an alert but a favour asked of the user, so it gets its own group, worded as consent. */}
+          <Group title={t('settingsImprove')} footer={t('improveNote')}>
+            <Row icon={<CloudIcon color={colors.text} />} label={t('improveAsk')}>
+              <Switch
+                value={settings.alerts.feedback !== false}
+                onValueChange={(v) => update({ alerts: { ...settings.alerts, feedback: v } })}
+                trackColor={{ true: colors.glow }}
+                thumbColor="#FFFFFF"
+              />
+            </Row>
+          </Group>
 
           <Group title={t('settingsAbout')} footer={`${t('aboutData')}\n${t('aboutDataNote')}`}>
             <Row icon={<GlobeIcon color={colors.text} />} label={t('aboutPrivacy')} onPress={() => Linking.openURL(PRIVACY_URL)}>
