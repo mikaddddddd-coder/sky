@@ -1,13 +1,15 @@
 import { useRouter } from 'expo-router';
-import { Alert, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Group, groupStyles, Row } from '../../components/GroupList';
-import { BellIcon, ChevronRightIcon, CycloneIcon, GlobeIcon, LockIcon, SlidersIcon, SparkleIcon, SunsetIcon } from '../../components/Icons';
+import { BellIcon, ChevronRightIcon, CloudIcon, CycloneIcon, GlobeIcon, LockIcon, SlidersIcon, SparkleIcon, SunsetIcon } from '../../components/Icons';
 import { SceneBackground } from '../../components/SceneBackground';
 import { colors, spacing, type } from '../../constants/theme';
 import type { StringKey } from '../../lib/i18n/strings';
-import { glowAlertFor, useSettings, type GlowAlert, type Settings } from '../../lib/settings';
+import { glowAlertFor, PAYMENTS_ENABLED, useSettings, type GlowAlert, type Settings } from '../../lib/settings';
+
+const PRIVACY_URL = 'https://lookup.minxi.work/privacy';
 
 const LANG_OPTIONS: { value: Settings['language']; label: string }[] = [
   { value: 'system', label: '' },
@@ -19,6 +21,7 @@ const ALERTS: { key: keyof Settings['alerts']; title: StringKey; desc: StringKey
   { key: 'glow', title: 'alertGlow', desc: 'alertGlowDesc', Icon: SunsetIcon },
   { key: 'sky', title: 'alertSky', desc: 'alertSkyDesc', Icon: SparkleIcon },
   { key: 'typhoon', title: 'alertTyphoon', desc: 'alertTyphoonDesc', Icon: CycloneIcon },
+  { key: 'feedback', title: 'alertFeedback', desc: 'alertFeedbackDesc', Icon: CloudIcon },
 ];
 
 const LEVELS: { value: GlowAlert['level']; label: StringKey }[] = [
@@ -80,12 +83,14 @@ export default function SettingsScreen() {
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>{t('tabSettings')}</Text>
 
-          <Group>
-            <Row icon={<SunsetIcon color={colors.glow} />} label={t('memberTitle')} onPress={openMember}>
-              <Text style={[groupStyles.value, settings.member && { color: colors.glow }]}>{t(settings.member ? 'memberActive' : 'memberInactive')}</Text>
-              <ChevronRightIcon color={colors.textDim} size={18} />
-            </Row>
-          </Group>
+          {PAYMENTS_ENABLED && (
+            <Group>
+              <Row icon={<SunsetIcon color={colors.glow} />} label={t('memberTitle')} onPress={openMember}>
+                <Text style={[groupStyles.value, settings.member && { color: colors.glow }]}>{t(settings.member ? 'memberActive' : 'memberInactive')}</Text>
+                <ChevronRightIcon color={colors.textDim} size={18} />
+              </Row>
+            </Group>
+          )}
 
           <Group title={t('settingsGeneral')}>
             <Row icon={<GlobeIcon color={colors.text} />} label={t('settingsLanguage')} onPress={pickLanguage}>
@@ -98,7 +103,7 @@ export default function SettingsScreen() {
             {ALERTS.map(({ key, title, Icon }) => (
               <Row key={key} icon={<Icon color={colors.text} />} label={t(title)}>
                 <Switch
-                  value={settings.alerts[key]}
+                  value={settings.alerts[key] !== false}
                   onValueChange={(v) => update({ alerts: { ...settings.alerts, [key]: v } })}
                   trackColor={{ true: colors.glow }}
                   thumbColor="#FFFFFF"
@@ -117,6 +122,12 @@ export default function SettingsScreen() {
               </Row>
             </Group>
           )}
+
+          <Group title={t('settingsAbout')} footer={`${t('aboutData')}\n${t('aboutDataNote')}`}>
+            <Row icon={<GlobeIcon color={colors.text} />} label={t('aboutPrivacy')} onPress={() => Linking.openURL(PRIVACY_URL)}>
+              <ChevronRightIcon color={colors.textDim} size={18} />
+            </Row>
+          </Group>
         </ScrollView>
       </SafeAreaView>
     </View>

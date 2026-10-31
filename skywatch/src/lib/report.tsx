@@ -91,7 +91,7 @@ export function ReportProvider({ children }: { children: ReactNode }) {
     load(false);
   }, [load]);
 
-  const anyAlert = settings.alerts.glow || settings.alerts.sky || settings.alerts.typhoon;
+  const anyAlert = settings.alerts.glow || settings.alerts.sky || settings.alerts.typhoon || settings.alerts.feedback !== false;
   useEffect(() => {
     syncBackgroundRefresh(anyAlert);
   }, [anyAlert]);

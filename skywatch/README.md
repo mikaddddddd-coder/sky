@@ -2,6 +2,15 @@
 
 一个观察天象的 iOS app：提醒你今晚有没有火烧云、月亮或金星值不值得看，以及附近有没有台风。界面支持中文和英文。
 
+## 现在是免费版
+
+第一版完全免费：没有内购、没有广告，所以可以继续用 Open-Meteo 的免费接口（非商业用途）。会员功能（拍摄指南、7 天展望、日出霞光、提醒选项）全部对所有人开放，会员页隐藏。
+以后要收费时：把 `src/lib/settings.tsx` 里的 `PAYMENTS_ENABLED` 改成 `true`，接上真正的内购，并换成 Open-Meteo 的付费订阅（或别的可商用数据源）。
+
+### 日落后回访
+
+日落后约 35 分钟，App 会问第一个关注城市「今晚的天空怎么样？」（没什么颜色 / 有点晚霞 / 烧起来了）。回答会匿名地连同当晚的预测一起发到 `../feedback-server`（Cloudflare Worker + D1），以后用来校准火烧云模型。分数 ≥ 30 的晚上都会问，低分的晚上大约每三天问一次，这样「预测说不会烧」的晚上也有数据。用户可以在设置里关掉。
+
 ## 运行
 
 ### 在 Mac 的 iOS 模拟器里运行
@@ -35,7 +44,10 @@ src/
     _layout.tsx           根布局（设置 Provider）
     (tabs)/index.tsx      今晚：各城市的天空报告
     (tabs)/cities.tsx     选择关注的城市
-    (tabs)/settings.tsx   语言、提醒开关
+    (tabs)/settings.tsx   语言、提醒开关、数据来源、隐私政策
+    glow.tsx / sun.tsx / moon.tsx / venus.tsx / typhoon.tsx   各天象的详情页
+    feedback.tsx          日落后回访的问题页
+    member.tsx            会员页（免费版里隐藏）
   components/             天空渐变背景、卡片、城市报告
   constants/              城市列表、配色
   lib/
@@ -44,7 +56,9 @@ src/
     sky/sunsetGlow.ts     火烧云评分模型
     sky/astro.ts          日落、暮光、月相、金星、月金相合（astronomy-engine，本地计算）
     sky/report.ts         汇总每个城市的「今晚报告」
-    notifications.ts      本地通知调度
+    notifications.ts      本地通知调度（含日落后回访）
+    background.ts         后台定时刷新预报和提醒
+    feedback.ts           回访：什么时候问、存回答、离线时排队重发
     i18n/strings.ts       中英文案
     settings.tsx          用户设置（AsyncStorage 持久化）
 ```
@@ -60,9 +74,12 @@ src/
 
 ## 路线图
 
-- [ ] 服务端定时任务 + 远程推送（App 没打开也能收到提醒）
-- [ ] GPS 定位 / 自定义城市
-- [ ] 用实际观测和用户反馈校准火烧云模型
+- [x] 后台刷新（App 没打开也能收到提醒；iOS 决定多久跑一次）
+- [ ] 服务端定时任务 + 远程推送（更准时）
+- [x] GPS 定位 / 自定义城市
+- [x] 收集用户反馈（日落后回访）
+- [ ] 用收集到的反馈校准火烧云模型
 - [ ] 台风路径图
 - [ ] 主屏幕小组件（Widget）、实时活动（Live Activity）
-- [ ] App 图标和正式名字
+- [x] App 图标和正式名字（天色 · Look Up，bundle id `com.mikali.lookup`）
+- [ ] 内购会员（`PAYMENTS_ENABLED`）+ 可商用的数据源

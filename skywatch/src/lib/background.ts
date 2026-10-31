@@ -20,7 +20,7 @@ TaskManager.defineTask(TASK, async () => {
   try {
     const settings = await loadSettings();
     const { alerts } = settings;
-    if (!alerts.glow && !alerts.sky && !alerts.typhoon) return BackgroundTask.BackgroundTaskResult.Success;
+    if (!alerts.glow && !alerts.sky && !alerts.typhoon && alerts.feedback === false) return BackgroundTask.BackgroundTaskResult.Success;
     // Never ask for permission from the background; there is no one to answer.
     if (!(await Notifications.getPermissionsAsync()).granted) return BackgroundTask.BackgroundTaskResult.Success;
     const cities = citiesFor(settings);

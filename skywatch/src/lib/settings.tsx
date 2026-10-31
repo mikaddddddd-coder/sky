@@ -9,7 +9,8 @@ export type Settings = {
   cityIds: string[];
   /** Cities added by search or from the device location, kept so they survive restarts. */
   customCities: City[];
-  alerts: { glow: boolean; sky: boolean; typhoon: boolean };
+  /** `feedback` is the after-sunset question; missing in settings saved before it existed, which counts as on. */
+  alerts: { glow: boolean; sky: boolean; typhoon: boolean; feedback?: boolean };
   /**
    * Which glows earn an alert, and how long before sunset the first one comes. Members choose;
    * everyone else gets the defaults: only a 火烧云, 2 hours ahead.
@@ -24,6 +25,13 @@ export type Settings = {
   guideTaste: string | null;
 };
 
+/**
+ * Off while the app is free: everyone gets what membership would unlock, and the offer is hidden.
+ * Turn on together with real in-app purchases (and a commercial weather-data plan).
+ */
+export const PAYMENTS_ENABLED = false;
+const withAccess = (s: Settings): Settings => (PAYMENTS_ENABLED ? s : { ...s, member: true });
+
 export type GlowAlert = { level: 'fire' | 'good'; leadMin: 60 | 120 | 180 };
 export const DEFAULT_GLOW_ALERT: GlowAlert = { level: 'fire', leadMin: 120 };
 /** What actually applies: a member's own choice, or the defaults for everyone else. */
@@ -33,7 +41,7 @@ const DEFAULTS: Settings = {
   language: 'system',
   cityIds: DEFAULT_CITY_IDS,
   customCities: [],
-  alerts: { glow: true, sky: true, typhoon: true },
+  alerts: { glow: true, sky: true, typhoon: true, feedback: true },
   glowAlert: DEFAULT_GLOW_ALERT,
   member: false,
   guideTaste: null,
@@ -59,7 +67,7 @@ export const resolveLang = (s: Settings): Lang => (s.language === 'system' ? sys
 /** The saved settings, read straight from storage, for work done outside the app's screens. */
 export async function loadSettings(): Promise<Settings> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
-  return raw ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) } : DEFAULTS;
+  return withAccess(raw ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) } : DEFAULTS);
 }
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
@@ -79,7 +87,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<SettingsContextValue>(() => {
     const lang = resolveLang(settings);
-    return { settings, update, lang, t: (key, vars) => translate(lang, key, vars) };
+    return { settings: withAccess(settings), update, lang, t: (key, vars) => translate(lang, key, vars) };
   }, [settings, update]);
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
