@@ -1,27 +1,28 @@
-// The first thing seen on a cold start. It picks up exactly where the native splash
-// leaves off (the same dusk glow, drawn the same way), lets two lines of text light up,
-// then fades onto the app. A tap skips it.
+// The first thing seen on a cold start. It picks up where the native splash leaves off
+// (the same near-black), lets the glow in the corner brighten from faint to full while
+// one line of text comes in letter by letter, then fades onto the app. A tap skips it.
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, Platform, Pressable, StyleSheet, View, type TextStyle } from 'react-native';
+import { Animated, Easing, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { easeOut } from './Motion';
 
-// Held until this screen has drawn its glow, so the hand-off from the native splash is seamless.
+// Held until this screen has drawn, so the hand-off from the native splash is seamless.
 SplashScreen.preventAutoHideAsync().catch(() => {});
-// The native splash draws the picture a shade redder; a slow cross-fade hides the difference.
-SplashScreen.setOptions({ fade: true, duration: 500 });
+SplashScreen.setOptions({ fade: true, duration: 300 });
 
 const native = Platform.OS !== 'web';
-const SANS = Platform.select({ ios: 'Avenir Next', default: undefined });
-// The orange of the glow in the corner, so the words read as part of it.
-const ORANGE = '#FF8A3D';
+const SANS = Platform.select({ ios: 'Helvetica Neue', default: undefined });
+// The native splash's colour, and the picture's own black.
+const DARK = '#060403';
 const OPENING = require('../../assets/opening.png');
+// Two spaces after the comma, as in the design.
+const LINE = 'LOOK UP,  JUST FOR A MOMENT';
+const LETTERS = [...LINE];
 
 export function OpeningScreen() {
   const [done, setDone] = useState(false);
-  const first = useRef(new Animated.Value(0)).current;
-  const second = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0)).current;
+  const letters = useRef(LETTERS.map(() => new Animated.Value(0))).current;
   const fade = useRef(new Animated.Value(1)).current;
   const started = useRef(false);
 
@@ -35,19 +36,16 @@ export function OpeningScreen() {
     if (started.current) return;
     started.current = true;
     SplashScreen.hideAsync().catch(() => {});
-    const show = (v: Animated.Value, delay: number) =>
-      Animated.timing(v, { toValue: 1, duration: 900, delay, easing: easeOut, useNativeDriver: native });
     Animated.sequence([
       Animated.parallel([
-        show(first, 200),
-        show(second, 900),
-        // The glow breathes in once behind the words, and settles a little lower.
-        Animated.sequence([
-          Animated.timing(glow, { toValue: 1, duration: 1000, delay: 200, easing: easeOut, useNativeDriver: native }),
-          Animated.timing(glow, { toValue: 0.55, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: native }),
-        ]),
+        // The light in the corner comes up slowly, like the last of the sun.
+        Animated.timing(glow, { toValue: 1, duration: 2400, easing: Easing.inOut(Easing.cubic), useNativeDriver: native }),
+        Animated.stagger(
+          40,
+          letters.map((v) => Animated.timing(v, { toValue: 1, duration: 700, delay: 500, easing: easeOut, useNativeDriver: native })),
+        ),
       ]),
-      Animated.delay(250),
+      Animated.delay(700),
     ]).start(({ finished }) => finished && leave());
   };
 
@@ -60,68 +58,41 @@ export function OpeningScreen() {
 
   if (done) return null;
 
-  const rise = (v: Animated.Value) => ({
-    opacity: v,
-    transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
-  });
-
   return (
     <Animated.View style={[StyleSheet.absoluteFill, styles.screen, { opacity: fade }]}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={leave} accessibilityRole="button" accessibilityLabel="Look up. Just for a moment.">
-        <Image source={OPENING} style={styles.backdrop} resizeMode="cover" onLoadEnd={start} />
-        <View style={styles.words}>
-          <Animated.View style={rise(first)}>
-            <GlowText style={styles.line} glow={glow}>
-              Look up.
-            </GlowText>
-          </Animated.View>
-          <Animated.View style={[rise(second), styles.closer]}>
-            <GlowText style={styles.line} glow={glow}>
-              Just for a moment.
-            </GlowText>
-          </Animated.View>
+      <Pressable style={StyleSheet.absoluteFill} onPress={leave} accessibilityRole="button" accessibilityLabel="Look up, just for a moment">
+        <Animated.Image
+          source={OPENING}
+          style={[styles.backdrop, { opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.12, 1] }) }]}
+          resizeMode="cover"
+          onLoadEnd={start}
+        />
+        <View style={styles.words} aria-hidden>
+          {LETTERS.map((ch, i) => (
+            <Animated.Text
+              key={i}
+              style={[
+                styles.letter,
+                {
+                  opacity: letters[i],
+                  transform: [{ translateY: letters[i].interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
+                },
+              ]}
+            >
+              {ch}
+            </Animated.Text>
+          ))}
         </View>
       </Pressable>
     </Animated.View>
   );
 }
 
-/** Text with a warm halo behind it whose strength follows `glow`. */
-function GlowText({ children, style, glow }: { children: string; style: TextStyle; glow: Animated.Value }) {
-  return (
-    <View>
-      <Animated.Text style={[style, styles.halo, { opacity: glow }]} aria-hidden>
-        {children}
-      </Animated.Text>
-      <Animated.Text style={[style, styles.crisp]}>{children}</Animated.Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  screen: { backgroundColor: '#000', zIndex: 10 },
+  screen: { backgroundColor: DARK, zIndex: 10 },
   // Sized outright: insets alone leave an Image at the picture's own size.
   backdrop: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
-  words: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: '12%' },
-  // Both lines alike, read as a single thought.
-  // Takes back the padding between the lines, so they sit as close as plain text would.
-  closer: { marginTop: -22 },
-  // Padded so the halo has room to spread instead of being cut off at the text's edges.
-  line: { fontFamily: SANS, fontSize: 20, fontWeight: '400', letterSpacing: 0.8, textAlign: 'center', paddingHorizontal: 28, paddingVertical: 14 },
-  halo: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    color: ORANGE,
-    textShadowColor: 'rgba(255,110,40,0.95)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 22,
-  },
-  crisp: {
-    color: ORANGE,
-    textShadowColor: 'rgba(255,120,50,0.5)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 6,
-  },
+  // Sits just above the middle, where the design puts it.
+  words: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingBottom: '4%' },
+  letter: { fontFamily: SANS, fontSize: 12, fontWeight: '400', letterSpacing: 1.3, color: '#fff' },
 });
