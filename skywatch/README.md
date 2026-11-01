@@ -57,7 +57,7 @@ src/
     sky/astro.ts          日落、暮光、月相、金星、月金相合（astronomy-engine，本地计算）
     sky/report.ts         汇总每个城市的「今晚报告」
     notifications.ts      本地通知调度（含日落后回访）
-    background.ts         后台定时刷新预报和提醒
+    background.ts         后台定时刷新观赏指数和提醒
     feedback.ts           回访：什么时候问、存回答、离线时排队重发
     i18n/strings.ts       中英文案
     settings.tsx          用户设置（AsyncStorage 持久化）

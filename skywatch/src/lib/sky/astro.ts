@@ -50,7 +50,7 @@ const PHASE_NAMES: MoonPhaseName[] = [
 // cycle is crescent or gibbous.
 const MAIN_PHASE_WINDOW = 6.1;
 
-function phaseNameFor(angle: number): MoonPhaseName {
+export function phaseNameFor(angle: number): MoonPhaseName {
   const nearest = Math.round(angle / 90) % 4;
   if (Math.abs(angle - Math.round(angle / 90) * 90) <= MAIN_PHASE_WINDOW) return PHASE_NAMES[nearest * 2];
   return PHASE_NAMES[Math.floor(angle / 90) * 2 + 1];

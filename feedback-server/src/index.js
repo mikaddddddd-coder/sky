@@ -91,28 +91,31 @@ const PRIVACY = `<!doctype html>
 </head>
 <body>
 <h1>天色 · Look Up 隐私政策</h1>
-<p class="dim">生效日期：2026 年 11 月 1 日</p>
+<p class="dim">生效日期：2026 年 11 月 2 日</p>
 <p>「天色 · Look Up」（以下简称「本应用」）无需注册账号，不展示广告，不进行跨应用追踪，也不会出售或向第三方提供你的个人信息。</p>
 
 <h2>一、位置信息</h2>
-<p>经你授权后，本应用使用设备位置计算当地的日落时间和天象，位置信息保存在你的设备上。获取天气预报时，所在地或所关注城市的经纬度会发送至天气数据服务 Open-Meteo。</p>
+<p>经你授权后，本应用使用设备位置计算当地的日落时间和天象，位置信息保存在你的设备上。获取天气数据时，所在地或所关注城市的经纬度会发送至天气数据服务 Open-Meteo。</p>
 
 <h2>二、日落后回访</h2>
-<p>日落后，本应用可能请你评价当晚的天空。仅当你作答时，你的评价、城市及其大致坐标（精度约 1 公里）、当晚的预测数据，以及一个安装时随机生成的标识符会发送至我们的服务器，用于改进预测模型。这些信息无法与你本人建立关联，我们也不记录你的 IP 地址。你可以在「设置 → 帮助改进预测 → 日落反馈」中关闭此功能。</p>
+<p>日落后，本应用可能请你评价当晚的天空。仅当你作答时，你的评价、城市及其大致坐标（精度约 1 公里）、当晚的观赏指数，以及一个安装时随机生成的标识符会发送至我们的服务器，用于改进观赏指数的算法。这些信息无法与你本人建立关联，我们也不记录你的 IP 地址。你可以在「设置 → 帮助改进观赏指数 → 日落反馈」中关闭此功能。</p>
 
-<h2>三、第三方服务</h2>
+<h2>三、出生信息</h2>
+<p>「出生天象」中填写的出生日期和地点只保存在你的设备上，用于在本机计算当天的天象，不会上传。搜索出生城市时，搜索词会发送至 Open-Meteo 的城市搜索服务。</p>
+
+<h2>四、第三方服务</h2>
 <p>天气与城市搜索数据来自 Open-Meteo，热带气旋信息来自 GDACS，城市名称由 Apple 系统定位服务解析，回访服务器由 Cloudflare 托管。</p>
 
-<h2>四、政策更新</h2>
+<h2>五、政策更新</h2>
 <p>本政策如有更新，将在本页面发布并注明生效日期。</p>
 
-<h2>五、联系我们</h2>
+<h2>六、联系我们</h2>
 <p>如有疑问，请发送邮件至 ${CONTACT_EMAIL}。</p>
 
 <hr>
 
 <h1 lang="en">Look Up Privacy Policy</h1>
-<p class="dim">Effective 1 November 2026</p>
+<p class="dim">Effective 2 November 2026</p>
 <p>Look Up (the "App") requires no account, shows no advertising, does not track you across apps, and does not sell or share your personal information with third parties.</p>
 
 <h2>1. Location</h2>
@@ -121,13 +124,16 @@ const PRIVACY = `<!doctype html>
 <h2>2. After-sunset check-in</h2>
 <p>After sunset, the App may ask you to rate the evening sky. Only if you answer, your rating, the city and its approximate coordinates (to about 1 km), that evening's forecast and a random identifier created at installation are sent to our server to improve the forecast model. This information cannot be linked to you, and we do not record your IP address. You can turn this off under Settings → Help improve forecasts → Sunset feedback.</p>
 
-<h2>3. Third-party services</h2>
+<h2>3. Birth details</h2>
+<p>The date and place you enter in Birth Sky stay on your device and are used only to calculate that day's sky on the device; they are never uploaded. When you search for a birth city, the search text is sent to Open-Meteo's city search.</p>
+
+<h2>4. Third-party services</h2>
 <p>Weather data and city search are provided by Open-Meteo, tropical cyclone data by GDACS, and city names are resolved by Apple's system location services. Our check-in server is hosted by Cloudflare.</p>
 
-<h2>4. Changes</h2>
+<h2>5. Changes</h2>
 <p>Any update to this policy will be published on this page with its effective date.</p>
 
-<h2>5. Contact</h2>
+<h2>6. Contact</h2>
 <p>Questions? Please email ${CONTACT_EMAIL}.</p>
 </body>
 </html>`;

@@ -3,6 +3,7 @@ import { getLocales } from 'expo-localization';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { DEFAULT_CITY_IDS, type City } from '../constants/cities';
 import { toSimplified } from './i18n/hanzi';
+import type { Birth } from './sky/birth';
 import { translate, type Lang, type StringKey } from './i18n/strings';
 
 export type Settings = {
@@ -27,6 +28,8 @@ export type Settings = {
    * The first 火烧云 they open spends it; that same glow stays open, later ones don't.
    */
   guideTaste: string | null;
+  /** For the birth-sky tab. Kept only on this phone, never sent anywhere. */
+  birth: Birth | null;
 };
 
 /**
@@ -55,6 +58,7 @@ const DEFAULTS: Settings = {
   glowAlert: DEFAULT_GLOW_ALERT,
   member: false,
   guideTaste: null,
+  birth: null,
 };
 
 const STORAGE_KEY = 'skywatch.settings.v1';

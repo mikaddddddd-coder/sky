@@ -31,8 +31,9 @@ function shadowPath(illumination: number) {
   return `M${C} ${C - R} A${R} ${R} 0 0 0 ${C} ${C + R} A${rx} ${R} 0 0 ${gibbous} ${C} ${C - R} Z`;
 }
 
-// Many faint layers spread across the terminator read as one soft gradient.
-const FEATHER = Array.from({ length: 13 }, (_, i) => ({ dk: (i - 6) * 0.01, o: 0.092 }));
+// Many faint layers spread across the terminator read as one soft gradient. They are finely
+// spaced so the steps between them don't show as stripes on a large moon.
+const FEATHER = Array.from({ length: 25 }, (_, i) => ({ dk: (i - 12) * 0.005, o: 0.046 }));
 
 export function MoonDisc({ size, illumination, waxing }: { size: number; illumination: number; waxing: boolean }) {
   const flip = waxing ? undefined : 'translate(100 0) scale(-1 1)';

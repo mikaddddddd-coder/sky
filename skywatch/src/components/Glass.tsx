@@ -52,7 +52,7 @@ export function Glass({ children, style, contentStyle, onPress, tone = 'light', 
 }
 
 /** A rim that catches light from above, plus a faint glint just inside the top edge. */
-function Sheen({ radius, aura }: { radius: number; aura?: Aura }) {
+export function Sheen({ radius, aura }: { radius: number; aura?: Aura }) {
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   const id = useSvgId('sheen');
   const onLayout = (e: LayoutChangeEvent) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height });

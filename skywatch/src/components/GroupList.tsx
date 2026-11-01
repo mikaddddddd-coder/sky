@@ -2,6 +2,7 @@
 import { Children, Fragment, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { colors, spacing, type } from '../constants/theme';
+import { Sheen } from './Glass';
 import { Text } from './Text';
 
 /** An optionally titled group of rows on one rounded panel, with hairlines between them. */
@@ -18,6 +19,7 @@ export function Group({ title, footer, children }: { title?: string; footer?: st
             {child}
           </Fragment>
         ))}
+        <Sheen radius={GROUP_RADIUS} />
       </View>
       {!!footer && <Text style={styles.footer}>{footer}</Text>}
     </View>
@@ -56,10 +58,12 @@ export function Row({
   );
 }
 
+const GROUP_RADIUS = 22;
+
 export const groupStyles = StyleSheet.create({
   /** The rounded panel on its own, for things like a search field. */
   panel: {
-    borderRadius: 22,
+    borderRadius: GROUP_RADIUS,
     overflow: 'hidden',
     backgroundColor: 'rgba(255,255,255,0.07)',
     borderWidth: StyleSheet.hairlineWidth,
@@ -71,7 +75,8 @@ export const groupStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   wrap: { gap: spacing.sm },
   title: { fontSize: 16, fontWeight: '600', letterSpacing: -0.2, color: colors.text, marginLeft: 2 },
-  group: groupStyles.panel,
+  // The rim light stands in for the hairline border, as on the Tonight cards.
+  group: { ...groupStyles.panel, borderWidth: 0 },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.12)' },
   row: { flexDirection: 'row', alignItems: 'center', minHeight: 48, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: spacing.sm + 4 },
   rowPressed: { backgroundColor: 'rgba(255,255,255,0.06)' },

@@ -1,7 +1,7 @@
 import { BlurView } from 'expo-blur';
 import Tabs from 'expo-router/tabs';
 import { StyleSheet } from 'react-native';
-import { PinIcon, SlidersIcon, SunsetIcon } from '../../components/Icons';
+import { PinIcon, SlidersIcon, StarsIcon, SunsetIcon } from '../../components/Icons';
 import { CJK_FONT } from '../../components/Text';
 import { colors } from '../../constants/theme';
 import { useSettings } from '../../lib/settings';
@@ -25,6 +25,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ title: t('tabTonight'), tabBarIcon: icon(SunsetIcon) }} />
       <Tabs.Screen name="cities" options={{ title: t('tabCities'), tabBarIcon: icon(PinIcon) }} />
+      <Tabs.Screen name="birth" options={{ title: t('tabBirth'), tabBarIcon: icon(StarsIcon) }} />
       <Tabs.Screen name="settings" options={{ title: t('tabSettings'), tabBarIcon: icon(SlidersIcon) }} />
     </Tabs>
   );

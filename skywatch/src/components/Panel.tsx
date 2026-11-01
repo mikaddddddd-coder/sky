@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { colors, spacing, type } from '../constants/theme';
+import { Sheen } from './Glass';
 import { Text } from './Text';
 
 type Tint = readonly [string, string];
@@ -14,6 +15,7 @@ export function Panel({ children, tint, style }: { children: ReactNode; tint: Ti
     <View style={[styles.panel, style]}>
       <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
       <LinearGradient colors={tint} locations={[0, 0.35]} style={StyleSheet.absoluteFill} />
+      <Sheen radius={RADIUS} />
       {children}
     </View>
   );
@@ -31,12 +33,13 @@ export function PanelStat({ label, value }: { label: string; value: string }) {
   );
 }
 
+const RADIUS = 28;
+
 const styles = StyleSheet.create({
+  // No border: the rim light draws the edge, as on the Tonight cards.
   panel: {
     overflow: 'hidden',
-    borderRadius: 28,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderRadius: RADIUS,
     padding: spacing.lg,
     gap: spacing.lg,
   },

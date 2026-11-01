@@ -50,6 +50,19 @@ export function PinIcon(p: IconProps) {
   );
 }
 
+/** A little constellation: four stars joined by lines. */
+export function StarsIcon(p: IconProps) {
+  return (
+    <Frame {...p}>
+      <Path d="M5 18.5 9.5 11l5 3 4.5-8.5" strokeOpacity={0.55} />
+      <Circle cx={5} cy={18.5} r={1.4} />
+      <Circle cx={9.5} cy={11} r={1.4} />
+      <Circle cx={14.5} cy={14} r={1.4} />
+      <Circle cx={19} cy={5.5} r={1.6} />
+    </Frame>
+  );
+}
+
 export function SlidersIcon(p: IconProps) {
   return (
     <Frame {...p}>
