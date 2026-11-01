@@ -110,7 +110,9 @@ export function ReportProvider({ children }: { children: ReactNode }) {
     locateHere(false).then((res) => {
       if (!('city' in res)) return;
       const old = settings.customCities.find((c) => c.id === HERE_ID);
-      if (old && distanceKm(old.latitude, old.longitude, res.city.latitude, res.city.longitude) < 3) return;
+      // Also when only the name changed, so a name saved in the wrong language is put right.
+      const sameName = old?.name.zh === res.city.name.zh && old?.name.en === res.city.name.en;
+      if (old && sameName && distanceKm(old.latitude, old.longitude, res.city.latitude, res.city.longitude) < 3) return;
       update({ customCities: [...settings.customCities.filter((c) => c.id !== HERE_ID), res.city] });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

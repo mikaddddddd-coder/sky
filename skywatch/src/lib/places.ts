@@ -3,6 +3,7 @@
 import { getCalendars } from 'expo-localization';
 import * as Location from 'expo-location';
 import { HERE_ID, type City } from '../constants/cities';
+import { distanceKm } from './geo';
 import { toSimplified, toTraditional } from './i18n/hanzi';
 import type { Lang } from './i18n/strings';
 
@@ -94,10 +95,11 @@ export async function locateHere(ask = true): Promise<LocateResult> {
     const [addr] = await Location.reverseGeocodeAsync({ latitude, longitude }).catch(() => []);
     const name = addr?.city ?? addr?.subregion ?? addr?.region ?? addr?.name ?? `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
     const timezone = addr?.timezone ?? getCalendars()[0]?.timeZone ?? 'UTC';
+    const names = (await namesNear(name, latitude, longitude).catch(() => null)) ?? { zh: toSimplified(name), en: name };
     return {
       city: {
         id: HERE_ID,
-        name: { zh: toSimplified(name), en: name },
+        name: names,
         latitude,
         longitude,
         timezone,
@@ -108,4 +110,19 @@ export async function locateHere(ask = true): Promise<LocateResult> {
   } catch {
     return { error: 'failed' };
   }
+}
+
+/**
+ * The device names a place in the phone's own language, whatever the app is set to
+ * (an English phone says "Shanghai"). So the name is looked up in the geocoder, and
+ * the match nearest the position gives the name in both languages.
+ */
+async function namesNear(name: string, latitude: number, longitude: number): Promise<City['name'] | null> {
+  const lang: Lang = /[\u4e00-\u9fff]/.test(name) ? 'zh' : 'en';
+  const near = (await searchPlaces(name, lang))
+    .map((p) => ({ p, km: distanceKm(latitude, longitude, p.latitude, p.longitude) }))
+    .filter(({ km }) => km < 60)
+    .sort((a, b) => a.km - b.km)[0];
+  if (!near) return null;
+  return (await cityFromPlace(near.p, lang)).name;
 }
