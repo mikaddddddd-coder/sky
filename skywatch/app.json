@@ -85,8 +85,7 @@
         }
       ],
       "expo-asset",
-      "@react-native-community/datetimepicker",
-      "expo-sharing"
+      "@react-native-community/datetimepicker"
     ],
     "scheme": "skywatch",
     "backgroundColor": "#03040C",
