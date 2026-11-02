@@ -69,7 +69,8 @@ export function BirthShareCard({ illumination, waxing, eyebrow, phase, when, sta
 }
 
 const styles = StyleSheet.create({
-  card: { width: SHARE_CARD_WIDTH, height: HEIGHT, borderRadius: 24, overflow: 'hidden', backgroundColor: GROUND },
+  // Square corners: it is saved as a photo, and rounded ones would leave transparent corners.
+  card: { width: SHARE_CARD_WIDTH, height: HEIGHT, overflow: 'hidden', backgroundColor: GROUND },
   head: { position: 'absolute', top: PAD + 6, left: PAD, right: PAD },
   // Thin and quiet, so the moon stays the first thing you see.
   when: { fontSize: 22, lineHeight: 28, fontWeight: '200', letterSpacing: 1.5, color: '#FFFFFF', fontVariant: ['tabular-nums'] },

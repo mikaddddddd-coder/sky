@@ -1,5 +1,5 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
-import * as Sharing from 'expo-sharing';
+import { Asset as PhotoAsset, requestPermissionsAsync as requestPhotoAccess } from 'expo-media-library';
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
 import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
@@ -51,6 +51,8 @@ function DateValue({ value, onPick, label }: { value: Date; onPick: (d: Date) =>
     </>
   );
 }
+
+type SaveState = 'idle' | 'saving' | 'saved' | 'denied' | 'failed';
 
 function BirthCard({ birth, sky, onShare }: { birth: Birth; sky: BirthSky; onShare: () => void }) {
   const { t, lang } = useSettings();
@@ -164,6 +166,7 @@ export default function BirthScreen() {
   const [found, setSearch] = useState<SearchState>({ status: 'idle', results: [] });
   const [adding, setAdding] = useState<number | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>('idle');
   const shareRef = useRef<ComponentRef<typeof View>>(null);
 
   const followed = settings.cityIds.map((id) => findCity(id, settings.customCities)).filter((c): c is City => !!c);
@@ -187,14 +190,23 @@ export default function BirthScreen() {
     };
   }, [query, lang]);
 
-  const sendShare = async () => {
+  // Photographs the poster in the preview straight into Photos.
+  const savePoster = async () => {
     if (!shareRef.current) return;
+    setSaveState('saving');
+    let next: SaveState = 'saved';
     try {
-      const uri = await captureRef(shareRef, { format: 'png', quality: 1, result: 'tmpfile' });
-      await Sharing.shareAsync(uri, { mimeType: 'image/png', UTI: 'public.png' });
+      const access = await requestPhotoAccess(true);
+      if (!access.granted) next = 'denied';
+      else await PhotoAsset.create(await captureRef(shareRef, { format: 'png', quality: 1, result: 'tmpfile' }));
     } catch {
-      // Closing the share sheet without picking anything lands here too; nothing to do.
+      next = 'failed';
     }
+    setSaveState(next);
+  };
+  const close = () => {
+    setSharing(false);
+    setSaveState('idle');
   };
 
   const save = (patch: Partial<Birth>) => update({ birth: { date: DEFAULT_DATE, place, ...birth, ...patch } });
@@ -282,20 +294,34 @@ export default function BirthScreen() {
       </SafeAreaView>
 
       {birth && sky && (
-        <Modal visible={sharing} transparent animationType="fade" onRequestClose={() => setSharing(false)}>
-          <Pressable style={styles.shareBackdrop} onPress={() => setSharing(false)}>
-            {/* Taps on the card itself shouldn't close the preview. */}
-            <Pressable onPress={() => {}}>
+        <Modal visible={sharing} transparent animationType="fade" onRequestClose={close}>
+          <Pressable style={styles.shareBackdrop} onPress={close}>
+            {/* Taps on the poster itself shouldn't close the preview. The poster is saved with square
+                corners; only the preview rounds them. */}
+            <Pressable onPress={() => {}} style={styles.posterFrame}>
               <BirthShareCard ref={shareRef} illumination={sky.moon.illumination} waxing={sky.moon.waxing} {...shareInfo(birth, sky, t, lang)} />
             </Pressable>
             <View style={styles.shareActions}>
-              <Pressable onPress={() => setSharing(false)} style={({ pressed }) => [styles.shareGhost, pressed && styles.pressed]} accessibilityRole="button">
+              <Pressable onPress={close} style={({ pressed }) => [styles.shareGhost, pressed && styles.pressed]} accessibilityRole="button">
                 <Text style={styles.shareText}>{t('close')}</Text>
               </Pressable>
-              <Pressable onPress={sendShare} style={({ pressed }) => [styles.shareSend, pressed && styles.pressed]} accessibilityRole="button">
-                <Text style={[styles.shareText, styles.shareSendText]}>{t('birthShareSend')}</Text>
+              <Pressable
+                onPress={savePoster}
+                disabled={saveState === 'saving' || saveState === 'saved'}
+                style={({ pressed }) => [styles.shareSend, pressed && styles.pressed]}
+                accessibilityRole="button"
+              >
+                {saveState === 'saving' ? (
+                  <ActivityIndicator color="#1A0E08" />
+                ) : (
+                  saveState === 'saved' && <CheckIcon color="#1A0E08" size={16} />
+                )}
+                <Text style={[styles.shareText, styles.shareSendText]}>{t(saveState === 'saved' ? 'birthSaved' : 'birthSave')}</Text>
               </Pressable>
             </View>
+            {(saveState === 'denied' || saveState === 'failed') && (
+              <Text style={styles.saveNote}>{t(saveState === 'denied' ? 'birthSaveDenied' : 'birthSaveFailed')}</Text>
+            )}
           </Pressable>
         </Modal>
       )}
@@ -318,12 +344,14 @@ const styles = StyleSheet.create({
   center: { textAlign: 'center' },
   shareButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingVertical: 12, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.1)' },
   shareText: { ...type.headline, color: colors.text },
-  pressed: { opacity: 0.7 },
   shareBackdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg, backgroundColor: 'rgba(3,4,12,0.88)' },
+  posterFrame: { borderRadius: 24, overflow: 'hidden' },
   shareActions: { flexDirection: 'row', gap: spacing.md },
   shareGhost: { paddingHorizontal: 28, paddingVertical: 12, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.12)' },
-  shareSend: { paddingHorizontal: 36, paddingVertical: 12, borderRadius: 22, backgroundColor: colors.glow },
+  shareSend: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 22, backgroundColor: colors.glow },
   shareSendText: { color: '#1A0E08' },
+  saveNote: { ...type.caption, color: colors.textDim, textAlign: 'center', paddingHorizontal: spacing.xl },
+  pressed: { opacity: 0.7 },
   planets: { gap: 10 },
   planet: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   dot: { width: 6, height: 6, borderRadius: 3 },

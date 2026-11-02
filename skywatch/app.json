@@ -42,6 +42,14 @@
       ],
       "expo-background-task",
       [
+        "expo-media-library",
+        {
+          "photosPermission": false,
+          "savePhotosPermission": "Look Up saves your birthday moon poster to your photo library.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
