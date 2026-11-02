@@ -12,7 +12,7 @@ import type { TonightReport } from './sky/report';
 const SKY_THRESHOLD = 70;
 // A 晚霞 this likely is worth heading out for, for members who want to hear about more than 火烧云.
 const GOOD_GLOW = 50;
-// Alerts already sent or scheduled, keyed by kind, city and evening (or cyclone),
+// Alerts already sent or scheduled, keyed by kind, city and evening,
 // each with the time after which the record can be forgotten.
 const SENT_KEY = 'skywatch.sentAlerts.v1';
 const LEGACY_TYPHOONS_KEY = 'skywatch.notifiedTyphoons';
@@ -23,9 +23,6 @@ const DAWN_LATEST_MS = 5 * 3600_000;
 
 async function loadSent(now: number): Promise<Map<string, number>> {
   const sent = new Map<string, number>(Object.entries(JSON.parse((await AsyncStorage.getItem(SENT_KEY)) ?? '{}')));
-  // Carry over typhoons recorded before evening alerts were tracked too.
-  const legacy: string[] = JSON.parse((await AsyncStorage.getItem(LEGACY_TYPHOONS_KEY)) ?? '[]');
-  for (const k of legacy) if (!sent.has(`typhoon:${k}`)) sent.set(`typhoon:${k}`, now + 14 * DAY);
   for (const [k, until] of sent) if (until < now) sent.delete(k);
   return sent;
 }
@@ -159,16 +156,6 @@ async function schedule(report: TonightReport, settings: Settings, lang: Lang, t
     ].filter(Boolean);
     if (beforeSunset && settings.alerts.sky && best.length) {
       await alert(`sky:${evening}`, new Date(sunset.getTime() - 3 * 3600_000), forgetAt, t('notifSkyTitle', { city }), best.join(' · '));
-    }
-
-    if (settings.alerts.typhoon && r.typhoon) {
-      await alert(
-        `typhoon:${r.typhoon.cyclone.id}:${r.city.id}`,
-        new Date(now),
-        now + 14 * DAY,
-        t('notifTyphoonTitle', { name: r.typhoon.cyclone.name, city }),
-        t('notifTyphoonBody', { km: Math.round(r.typhoon.km) }),
-      );
     }
   }
   await AsyncStorage.setItem(SENT_KEY, JSON.stringify(Object.fromEntries(sent)));

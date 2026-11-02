@@ -55,7 +55,7 @@ function keepForecasts(next: TonightReport, prev: TonightReport): TonightReport 
 // One shared report so the Tonight list and the detail scenes show the same numbers.
 export function ReportProvider({ children }: { children: ReactNode }) {
   // Nothing runs on the default cities and alerts while the saved settings are still being read:
-  // a report built on them would schedule alerts, typhoons included, for cities the user never chose.
+  // a report built on them would schedule alerts for cities the user never chose.
   const { settings, ready, update, lang, t } = useSettings();
   const [report, setReport] = useState<TonightReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,7 +96,7 @@ export function ReportProvider({ children }: { children: ReactNode }) {
     if (ready) load(false);
   }, [ready, load]);
 
-  const anyAlert = settings.alerts.glow || settings.alerts.sky || settings.alerts.typhoon || settings.alerts.feedback !== false;
+  const anyAlert = settings.alerts.glow || settings.alerts.sky || settings.alerts.feedback !== false;
   useEffect(() => {
     if (ready) syncBackgroundRefresh(anyAlert);
   }, [ready, anyAlert]);

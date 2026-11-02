@@ -154,7 +154,7 @@ export default function CitiesScreen() {
 
           <Group title={t('cityGroupLocation')} footer={locateError ?? undefined}>
             <Row
-              icon={<LocateIcon color={colors.typhoon} size={20} />}
+              icon={<LocateIcon color={colors.locate} size={20} />}
               label={here ? here.name[lang] : t('cityUseLocation')}
               sub={locating ? t('cityLocating') : here ? t('cityHere') : t('cityUseLocationDesc')}
               onPress={followLocation}

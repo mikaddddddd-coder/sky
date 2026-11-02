@@ -1,6 +1,6 @@
 // The sky on the day someone was born: the moon, the sun's constellation and the
 // bright planets, computed locally like the rest of the sky.
-import { Body, Constellation, Elongation, Equator, Horizon, Illumination, MoonPhase, Observer, SearchRiseSet } from 'astronomy-engine';
+import { Body, Constellation, Elongation, Equator, GeoMoon, Horizon, Illumination, MoonPhase, Observer, SearchRiseSet } from 'astronomy-engine';
 import type { City } from '../../constants/cities';
 import { phaseNameFor, type MoonPhaseName } from './astro';
 import { tzOffsetMinutes } from './report';
@@ -37,6 +37,10 @@ export type BirthSky = {
     constellation: Con;
     rise: Date | null;
     set: Date | null;
+    /** Days since the last new moon. */
+    age: number;
+    /** Centre to centre, in km. */
+    distanceKm: number;
   };
   planets: PlanetAtBirth[];
   /** Full moons from then until `now`. */
@@ -44,6 +48,7 @@ export type BirthSky = {
 };
 
 const SYNODIC_DAYS = 29.530588;
+const KM_PER_AU = 149_597_870.7;
 // Planets this close to the sun are lost in its glare.
 const GLARE_DEG = 12;
 // An hour and a half after sunset, when the sky is dark and the first planets show.
@@ -119,6 +124,8 @@ export function computeBirthSky(birth: Birth, now = new Date()): BirthSky {
       constellation: constellationOf(Body.Moon, at, obs),
       rise,
       set,
+      age: (phaseAngle / 360) * SYNODIC_DAYS,
+      distanceKm: GeoMoon(at).Length() * KM_PER_AU,
     },
     planets,
     fullMoonsSince,

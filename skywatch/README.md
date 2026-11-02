@@ -1,6 +1,6 @@
 # 天色 · Look Up
 
-一个观察天象的 iOS app：提醒你今晚有没有火烧云、月亮或金星值不值得看，以及附近有没有台风。界面支持中文和英文。
+一个观察天象的 iOS app：提醒你今晚有没有火烧云、月亮或金星值不值得看，以及接下来有哪些特殊天象（比如流星雨）。界面支持中文和英文。
 
 ## 现在是免费版
 
@@ -45,17 +45,17 @@ src/
     (tabs)/index.tsx      今晚：各城市的天空报告
     (tabs)/cities.tsx     选择关注的城市
     (tabs)/settings.tsx   语言、提醒开关、数据来源、隐私政策
-    glow.tsx / sun.tsx / moon.tsx / venus.tsx / typhoon.tsx   各天象的详情页
+    glow.tsx / sun.tsx / moon.tsx / venus.tsx / events.tsx   各天象的详情页
     feedback.tsx          日落后回访的问题页
     member.tsx            会员页（免费版里隐藏）
   components/             天空渐变背景、卡片、城市报告
   constants/              城市列表、配色
   lib/
     api/openMeteo.ts      云量、湿度、降水、气溶胶（Open-Meteo，无需 key）
-    api/typhoon.ts        西太平洋热带气旋（GDACS）
     sky/sunsetGlow.ts     火烧云评分模型
     sky/astro.ts          日落、暮光、月相、金星、月金相合（astronomy-engine，本地计算）
     sky/report.ts         汇总每个城市的「今晚报告」
+    sky/events.ts         特殊天象：流星雨等每年的固定天象
     notifications.ts      本地通知调度（含日落后回访）
     background.ts         后台定时刷新观赏指数和提醒
     feedback.ts           回访：什么时候问、存回答、离线时排队重发
@@ -79,7 +79,7 @@ src/
 - [x] GPS 定位 / 自定义城市
 - [x] 收集用户反馈（日落后回访）
 - [ ] 用收集到的反馈校准火烧云模型
-- [ ] 台风路径图
+- [ ] 特殊天象：日月食、行星合月、超级月亮
 - [ ] 主屏幕小组件（Widget）、实时活动（Live Activity）
 - [x] App 图标和正式名字（天色 · Look Up，bundle id `com.mikali.lookup`）
 - [ ] 内购会员（`PAYMENTS_ENABLED`）+ 可商用的数据源

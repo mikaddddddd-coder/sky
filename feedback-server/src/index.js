@@ -104,7 +104,7 @@ const PRIVACY = `<!doctype html>
 <p>「出生天象」中填写的出生日期和地点只保存在你的设备上，用于在本机计算当天的天象，不会上传。搜索出生城市时，搜索词会发送至 Open-Meteo 的城市搜索服务。</p>
 
 <h2>四、第三方服务</h2>
-<p>天气与城市搜索数据来自 Open-Meteo，热带气旋信息来自 GDACS，城市名称由 Apple 系统定位服务解析，回访服务器由 Cloudflare 托管。</p>
+<p>天气与城市搜索数据来自 Open-Meteo，城市名称由 Apple 系统定位服务解析，回访服务器由 Cloudflare 托管。</p>
 
 <h2>五、政策更新</h2>
 <p>本政策如有更新，将在本页面发布并注明生效日期。</p>
@@ -128,7 +128,7 @@ const PRIVACY = `<!doctype html>
 <p>The date and place you enter in Birth Sky stay on your device and are used only to calculate that day's sky on the device; they are never uploaded. When you search for a birth city, the search text is sent to Open-Meteo's city search.</p>
 
 <h2>4. Third-party services</h2>
-<p>Weather data and city search are provided by Open-Meteo, tropical cyclone data by GDACS, and city names are resolved by Apple's system location services. Our check-in server is hosted by Cloudflare.</p>
+<p>Weather data and city search are provided by Open-Meteo, and city names are resolved by Apple's system location services. Our check-in server is hosted by Cloudflare.</p>
 
 <h2>5. Changes</h2>
 <p>Any update to this policy will be published on this page with its effective date.</p>

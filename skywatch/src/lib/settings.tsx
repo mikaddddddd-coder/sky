@@ -15,7 +15,7 @@ export type Settings = {
    * `feedback` is the after-sunset question and `island` the Dynamic Island countdown; either is
    * missing in settings saved before it existed, which counts as on.
    */
-  alerts: { glow: boolean; sky: boolean; typhoon: boolean; feedback?: boolean; island?: boolean };
+  alerts: { glow: boolean; sky: boolean; feedback?: boolean; island?: boolean };
   /**
    * Which glows earn an alert, and how long before sunset the first one comes. Members choose;
    * everyone else gets the defaults: only a 火烧云, 2 hours ahead.
@@ -54,7 +54,7 @@ const DEFAULTS: Settings = {
   language: 'system',
   cityIds: DEFAULT_CITY_IDS,
   customCities: [],
-  alerts: { glow: true, sky: true, typhoon: true, feedback: true, island: true },
+  alerts: { glow: true, sky: true, feedback: true, island: true },
   glowAlert: DEFAULT_GLOW_ALERT,
   member: false,
   guideTaste: null,

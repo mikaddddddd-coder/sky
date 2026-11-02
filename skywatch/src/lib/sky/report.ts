@@ -1,4 +1,3 @@
-import { fetchActiveCyclones, nearestCyclone, type Cyclone, type CycloneNear } from '../api/typhoon';
 import type { FetchOptions } from '../api/http';
 import { fetchCanvasClouds, fetchPointForecasts, type PointForecast } from '../api/openMeteo';
 import { destinationPoint } from '../geo';
@@ -11,7 +10,6 @@ import { glowFromForecasts, RAY_KM, type GlowForecast } from './sunsetGlow';
 const WEST_SAMPLE_KM = 150;
 // That point is one of the ray's, so it comes with the ray rather than in a request of its own.
 const SAMPLE_INDEX = RAY_KM.indexOf(WEST_SAMPLE_KM);
-export const TYPHOON_ALERT_KM = 800;
 // Once the evening light is well over, the glow worth knowing about is tomorrow's.
 const GLOW_OVER_MS = 45 * 60_000;
 // Morning colour fades faster once the sun is up.
@@ -38,10 +36,6 @@ export type CityReport = {
   duskIndex: number;
   /** Temperature and humidity range over the city's local calendar day. */
   today: DayRange | null;
-  /** Nearest cyclone within alert range, if any. */
-  typhoon: CycloneNear | null;
-  /** Nearest active West Pacific cyclone at any distance. */
-  nearestCyclone: CycloneNear | null;
   error?: string;
 };
 
@@ -65,7 +59,6 @@ function dayRange(f: PointForecast, now: Date, offsetMinutes: number): DayRange 
 export type TonightReport = {
   generatedAt: Date;
   cities: CityReport[];
-  activeCyclones: Cyclone[];
 };
 
 export function tzOffsetMinutes(timezone: string, at: Date) {
@@ -106,18 +99,15 @@ export async function buildTonightReport(cities: City[], now = new Date(), opts:
     [bearings[i].west, bearings[i].east].flatMap((az) => RAY_KM.map((km) => destinationPoint(c.latitude, c.longitude, az, km))),
   );
 
-  const [forecasts, rays, cyclones] = await Promise.all([
+  const [forecasts, rays] = await Promise.all([
     fetchPointForecasts(points, opts).catch((e: Error) => e),
     // One request per city, side by side: all of them in one took up to half a minute and
     // timed out, and this way a slow city only loses its own rays.
     Promise.all(rayPoints.map((p) => fetchCanvasClouds(p, opts).catch(() => null))),
-    fetchActiveCyclones(now, opts).catch(() => [] as Cyclone[]),
   ]);
 
   const reports = cities.map((city, i): CityReport => {
     const sky = skies[i];
-    const near = nearestCyclone(cyclones, city.latitude, city.longitude);
-    const typhoon = near && near.km <= TYPHOON_ALERT_KM ? near : null;
     const n = RAY_KM.length;
     const westRay = rays[i]?.slice(0, n) ?? null;
     const eastRay = rays[i]?.slice(n) ?? null;
@@ -135,8 +125,6 @@ export async function buildTonightReport(cities: City[], now = new Date(), opts:
     const base = {
       city,
       sky,
-      typhoon,
-      nearestCyclone: near,
       glowSunset: today.sunset,
       glowTomorrow: duskIndex[i] > 0,
       week,
@@ -147,5 +135,5 @@ export async function buildTonightReport(cities: City[], now = new Date(), opts:
     return { ...base, glow: today.dusk, today: dayRange(local, now, tzOffsetMinutes(city.timezone, now)) };
   });
 
-  return { generatedAt: now, cities: reports, activeCyclones: cyclones };
+  return { generatedAt: now, cities: reports };
 }

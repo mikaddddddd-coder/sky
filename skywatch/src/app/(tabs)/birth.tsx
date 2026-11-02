@@ -128,21 +128,31 @@ function BirthCard({ birth, sky, onShare }: { birth: Birth; sky: BirthSky; onSha
   );
 }
 
-/** The words on the share card: the moon's phase, the date, and two facts. */
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** 1990-12-29 → Dec 29, 1990: the card always writes the date the English way. */
+const shareDate = (date: string) => {
+  const [y, m, d] = date.split('-').map(Number);
+  return `${MONTHS[m - 1]} ${d}, ${y}`;
+};
+
+/** The words on the share card: the moon's phase, the date, and six facts about that night's moon. */
 function shareInfo(birth: Birth, sky: BirthSky, t: ReturnType<typeof useSettings>['t'], lang: 'zh' | 'en'): ShareCardInfo {
-  const up = sky.planets.filter((p) => p.where === 'up' && sky.dark);
+  const { moon } = sky;
+  const time = (d: Date | null) => (d ? formatTime(d, birth.place.timezone, lang) : '—');
+  const distance =
+    lang === 'zh' ? (moon.distanceKm / 10_000).toFixed(1) : (Math.round(moon.distanceKm / 1000) * 1000).toLocaleString('en-US');
   return {
     eyebrow: t('birthShareEyebrow'),
-    phase: t(`phase_${sky.moon.phaseName}`),
-    when: birth.date.replaceAll('-', '.'),
+    phase: t(`phase_${moon.phaseName}`),
+    when: shareDate(birth.date),
     stats: [
-      { label: t('birthMoonIn'), value: conName(sky.moon.constellation, lang) },
-      { label: t('moonLit'), value: `${Math.round(sky.moon.illumination * 100)}%` },
+      { label: t('moonLit'), value: `${Math.round(moon.illumination * 100)}%` },
+      { label: t('birthMoonAge'), value: t('birthMoonAgeValue', { n: moon.age.toFixed(1) }) },
+      { label: t('birthMoonConstellation'), value: conName(moon.constellation, lang) },
+      { label: t('moonrise_label'), value: time(moon.rise) },
+      { label: t('moonset_label'), value: time(moon.set) },
+      { label: t('birthMoonDistance'), value: t('birthMoonDistanceValue', { n: distance }) },
     ],
-    note: up.length
-      ? t('birthPlanetsSeenEvening', { names: up.map((p) => t(`planet_${p.name}`)).join(t('birthJoin')) })
-      : t('birthFullMoonsLine', { n: sky.fullMoonsSince }),
-    brand: t('birthShareBrand'),
   };
 }
 

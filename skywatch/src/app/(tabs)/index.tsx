@@ -7,19 +7,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Glass, type Aura } from '../../components/Glass';
 import { GlowOrb } from '../../components/GlowOrb';
 import { LockIcon } from '../../components/Icons';
+import { OrbitLimb } from '../../components/OrbitLimb';
 import { aodLevel, vividLevel } from '../../lib/sky/sunsetGlow';
 import { MoonDisc } from '../../components/MoonDisc';
 import { Rise, useCountUp } from '../../components/Motion';
 import { skyPhaseFor } from '../../components/SceneBackground';
 import { SunArc } from '../../components/SunArc';
 import { TonightBackdrop } from '../../components/TonightBackdrop';
-import { TyphoonRadar } from '../../components/TyphoonRadar';
 import { VenusMini } from '../../components/VenusMini';
 import { colors, spacing } from '../../constants/theme';
 import { formatTime } from '../../lib/format';
 import { useTonightReport } from '../../lib/report';
 import { useSettings } from '../../lib/settings';
 import type { Level } from '../../lib/sky/level';
+import { peakLine, upcomingEvents } from '../../lib/sky/events';
 import type { CityReport, GlowKind } from '../../lib/sky/report';
 
 // Only the promising levels get colour; the rest stay quiet white.
@@ -31,9 +32,8 @@ const LEVEL_COLOR: Record<Level, string> = {
 };
 
 // Cards come in three sizes so the page has a lead: the sunset glow is the hero,
-// sun and typhoon run full width, and moon and Venus sit side by side.
+// sun and special events run full width, and moon and Venus sit side by side.
 const HEIGHT = { hero: 240, wide: 176, tile: 224, strip: 136 };
-const RADAR = 150;
 
 // Each card glows in its own colour. The glow card's light follows tonight's odds,
 // so a promising evening is visibly louder than a quiet one.
@@ -45,9 +45,7 @@ const AURA = {
   sun: { color: '#FFA53D', x: 0.85, y: 1.05, strength: 0.22 },
   moon: { color: '#8FA8FF', x: 0.75, y: 0.3, strength: 0.2 },
   venus: { color: '#B48CFF', x: 0.3, y: 0.35, strength: 0.22 },
-  // Typhoon stays blue either way; a storm in range is just a deeper, stronger blue.
-  calm: { color: '#6FB4FF', x: 0.85, y: 0.5, strength: 0.2 },
-  alert: { color: '#3D7BFF', x: 0.85, y: 0.5, strength: 0.32 },
+  events: { color: '#5C8DFF', x: 0.95, y: 0.4, strength: 0.16 },
 } satisfies Record<string, Aura>;
 
 // Type on this page runs in four steps: a small spaced label names each card,
@@ -256,42 +254,21 @@ function VenusCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
   );
 }
 
-function TyphoonCard({ r, count, onPress }: { r: CityReport; count: number; onPress: () => void }) {
+function EventsCard({ r, onPress }: { r: CityReport; onPress: () => void }) {
   const { t, lang } = useSettings();
-  const ty = r.typhoon;
-  const near = r.nearestCyclone;
-  const city = r.city.name[lang];
+  const next = upcomingEvents(r.city.timezone, new Date(), 1)[0];
   return (
-    <Card label={t('typhoonTitle')} height={HEIGHT.strip} aura={ty ? AURA.alert : AURA.calm} onPress={onPress}>
-      {/* The radar sits large in the corner, partly cut off by the card's edge. */}
-      <View style={styles.radar}>
-        <TyphoonRadar r={r} size={RADAR} />
-      </View>
+    <Card label={t('eventsTitle')} height={HEIGHT.strip} aura={AURA.events} backdrop={<OrbitLimb />} onPress={onPress}>
       <View style={styles.cardRow}>
-        <View style={[styles.cardText, styles.radarClear]}>
-          {ty ? (
-            <>
-              <View style={styles.figureRow}>
-                <Text style={styles.compactFigure}>{Math.round(ty.km)}</Text>
-                <Text style={styles.figureUnitSmall}>km</Text>
-              </View>
-              <Text style={styles.detail} numberOfLines={1}>
-                {t('typhoonFrom', { name: ty.cyclone.name, city })}
-                {ty.trend && ty.trend !== 'steady' ? ` · ${t(`typhoonTrend_${ty.trend}`)}` : ''}
-              </Text>
-            </>
-          ) : (
-            <View style={styles.headBlock}>
-              <Text style={styles.headline} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{t('typhoonAllClear')}</Text>
-              <Text style={styles.detail} numberOfLines={2}>
-                {near
-                  ? t('typhoonNearestBrief', { name: near.cyclone.name, km: Math.round(near.km) })
-                  : count
-                    ? t('typhoonActive', { n: count })
-                    : t('typhoonNoneActive')}
-              </Text>
-            </View>
-          )}
+        <View style={[styles.cardText, styles.limbClear]}>
+          <View style={styles.headBlock}>
+            <Text style={styles.headline} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              {t(`event_${next.id}`)}
+            </Text>
+            <Text style={styles.detail} numberOfLines={1}>
+              {peakLine(next, t, lang)}
+            </Text>
+          </View>
         </View>
       </View>
     </Card>
@@ -299,7 +276,7 @@ function TyphoonCard({ r, count, onPress }: { r: CityReport; count: number; onPr
 }
 
 /** Everything about one city's evening, as one page of the pager. */
-const CityPage = memo(function CityPage({ r, count, first, onOpen }: { r: CityReport; count: number; first: boolean; onOpen: (cityId: string, path: ScenePath) => void }) {
+const CityPage = memo(function CityPage({ r, first, onOpen }: { r: CityReport; first: boolean; onOpen: (cityId: string, path: ScenePath) => void }) {
   const open = (path: ScenePath) => onOpen(r.city.id, path);
   return (
     <View style={styles.stack}>
@@ -323,13 +300,13 @@ const CityPage = memo(function CityPage({ r, count, first, onOpen }: { r: CityRe
         </Rise>
       </View>
       <Rise delay={250}>
-        <TyphoonCard r={r} count={count} onPress={() => open('/typhoon')} />
+        <EventsCard r={r} onPress={() => open('/events')} />
       </Rise>
     </View>
   );
 });
 
-type ScenePath = '/sun' | '/moon' | '/venus' | '/typhoon';
+type ScenePath = '/sun' | '/moon' | '/venus' | '/events';
 
 export default function TonightScreen() {
   const { t, lang } = useSettings();
@@ -428,7 +405,7 @@ export default function TonightScreen() {
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={loading && !!report} onRefresh={refresh} tintColor={colors.text} />}
               >
-                <CityPage r={r} count={report?.activeCyclones.length ?? 0} first={i === 0} onOpen={openScene} />
+                <CityPage r={r} first={i === 0} onOpen={openScene} />
                 <Text style={styles.footer}>{t('dataSource')}</Text>
               </ScrollView>
             ) : (
@@ -497,8 +474,8 @@ const styles = StyleSheet.create({
   heroFire: { fontWeight: '200', textShadowColor: 'rgba(255,58,46,0.7)', textShadowRadius: 18 },
   pair: { flexDirection: 'row', gap: spacing.md - 4 },
   // Offsets are from the card body, which sits inside the card's 20pt padding.
-  radar: { position: 'absolute', right: -30, bottom: -55 },
-  radarClear: { marginRight: RADAR * 0.75 },
+  // Keeps the text off the Earth's limb in the lower right.
+  limbClear: { marginRight: '38%' },
   half: { flex: 1 },
   // Square tiles: the picture on top, the verdict underneath.
   tileArt: { flex: 1, alignItems: 'center', justifyContent: 'center' },

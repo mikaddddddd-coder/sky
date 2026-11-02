@@ -31,16 +31,6 @@ export function SparkleIcon(p: IconProps) {
   );
 }
 
-export function CycloneIcon(p: IconProps) {
-  return (
-    <Frame {...p}>
-      <Circle cx={12} cy={12} r={2.2} />
-      <Path d="M12 4.5c-4.5 0-7.5 3-7.5 7.5M12 19.5c4.5 0 7.5-3 7.5-7.5" />
-      <Path d="M8 6.2C9.3 3.8 11.7 3 14 3M16 17.8C14.7 20.2 12.3 21 10 21" />
-    </Frame>
-  );
-}
-
 export function PinIcon(p: IconProps) {
   return (
     <Frame {...p}>

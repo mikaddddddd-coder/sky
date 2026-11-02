@@ -34,8 +34,19 @@ function shadowPath(illumination: number) {
 // Many faint layers spread across the terminator read as one soft gradient. They are finely
 // spaced so the steps between them don't show as stripes on a large moon.
 const FEATHER = Array.from({ length: 25 }, (_, i) => ({ dk: (i - 12) * 0.005, o: 0.046 }));
+// With a fully dark side the light fades out only on the lit side of the terminator, in many faint, close
+// steps so they never band, down into the solid shadow.
+const FEATHER_DEEP = Array.from({ length: 40 }, (_, i) => ({ dk: -(i + 1) * 0.0025, o: 0.06 }));
 
-export function MoonDisc({ size, illumination, waxing }: { size: number; illumination: number; waxing: boolean }) {
+type Props = {
+  size: number;
+  illumination: number;
+  waxing: boolean;
+  /** Paint the unlit side solid in this colour, with no halo, so it vanishes into a plain ground like a real night photo. */
+  unlit?: string;
+};
+
+export function MoonDisc({ size, illumination, waxing, unlit }: Props) {
   const flip = waxing ? undefined : 'translate(100 0) scale(-1 1)';
   const showShadow = illumination < 0.985;
   const id = useSvgId('moon');
@@ -56,7 +67,7 @@ export function MoonDisc({ size, illumination, waxing }: { size: number; illumin
             <Stop offset={1} stopColor="#FFF6E0" stopOpacity={0} />
           </RadialGradient>
         </Defs>
-        <Circle cx={C} cy={C} r={50} fill={`url(#${id}-halo)`} />
+        {!unlit && <Circle cx={C} cy={C} r={50} fill={`url(#${id}-halo)`} />}
         {!MOON_PHOTO && (
           <>
             <Circle cx={C} cy={C} r={R} fill={`url(#${id}-surface)`} />
@@ -87,10 +98,14 @@ export function MoonDisc({ size, illumination, waxing }: { size: number; illumin
         <View style={layer}>
           <Svg width={size} height={size} viewBox="0 0 100 100">
             <G transform={flip}>
-              {FEATHER.map((f, i) => (
-                <Path key={i} d={shadowPath(illumination + f.dk)} fill="#0B0A09" fillOpacity={f.o} />
+              {/* Inside the feathered edge the dark side is fully hidden. */}
+              {unlit && <Path d={shadowPath(illumination)} fill={unlit} />}
+              {(unlit ? FEATHER_DEEP : FEATHER).map((f, i) => (
+                <Path key={i} d={shadowPath(illumination + f.dk)} fill={unlit ?? '#0B0A09'} fillOpacity={f.o} />
               ))}
             </G>
+            {/* Hides the photo's anti-aliased rim, which otherwise draws a faint ring round the dark side. */}
+            {unlit && <Circle cx={C} cy={C} r={R + 0.75} fill="none" stroke={unlit} strokeWidth={1.5} />}
           </Svg>
         </View>
       )}

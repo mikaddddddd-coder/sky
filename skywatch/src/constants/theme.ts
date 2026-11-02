@@ -22,7 +22,7 @@ export const colors = {
   glow: '#FF8A5B',
   moon: '#E8E4FF',
   venus: '#FFE7A3',
-  typhoon: '#7FD1FF',
+  locate: '#7FD1FF',
   good: '#7CF2B0',
   warn: '#FFB86B',
   bad: '#FF6B81',

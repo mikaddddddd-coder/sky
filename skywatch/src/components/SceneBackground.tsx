@@ -1,12 +1,12 @@
 // Full-bleed atmospheric backdrops, drawn with gradients and soft radial glows
-// (no photos), one per scene: the live sky, sunset clouds, moonlit night, typhoon.
+// (no photos), one per scene: the live sky, sunset clouds, moonlit night.
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, type LayoutChangeEvent } from 'react-native';
-import Svg, { Circle, Defs, Ellipse, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, Ellipse, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 import type { SkyPhase } from '../constants/theme';
 import { useSvgId } from './useSvgId';
 
-export type Scene = SkyPhase | 'glow' | 'moon' | 'typhoon';
+export type Scene = SkyPhase | 'glow' | 'moon';
 
 type Blob = { cx: number; cy: number; rx: number; ry: number; color: string; opacity: number };
 type SceneDef = { stops: [number, string][]; blobs: Blob[] };
@@ -52,10 +52,6 @@ const SCENES: Record<Scene, SceneDef> = {
       { cx: 0.5, cy: 0.42, rx: 0.5, ry: 0.3, color: '#140A08', opacity: 0.7 },
     ],
   },
-  typhoon: {
-    stops: [[0, '#3E7CCB'], [0.6, '#5B92D6'], [1, '#2F5FA8']],
-    blobs: [{ cx: 0.15, cy: 0.5, rx: 0.6, ry: 0.5, color: '#8DB4E6', opacity: 0.35 }],
-  },
 };
 
 export function skyPhaseFor(now: Date, sunset: Date, civilDusk: Date): SkyPhase {
@@ -92,18 +88,8 @@ export function SceneBackground({ scene, fadeIn = false }: { scene: Scene; fadeI
               <Stop offset={1} stopColor={b.color} stopOpacity={0} />
             </RadialGradient>
           ))}
-          {scene === 'typhoon' && (
-            <RadialGradient id={`${id}-limb`} cx="50%" cy="50%" r="50%">
-              <Stop offset={0} stopColor="#7FA8E0" stopOpacity={0.15} />
-              <Stop offset={0.8} stopColor="#B7D2F5" stopOpacity={0.4} />
-              <Stop offset={0.93} stopColor="#F2F8FF" stopOpacity={0.95} />
-              <Stop offset={0.965} stopColor="#9CC0EE" stopOpacity={0.35} />
-              <Stop offset={1} stopColor="#2F5FA8" stopOpacity={0} />
-            </RadialGradient>
-          )}
         </Defs>
         <Rect x={0} y={0} width={w} height={h} fill={`url(#${id}-sky)`} />
-        {scene === 'typhoon' && <Circle cx={w * 0.02} cy={h * 0.42} r={h * 0.56} fill={`url(#${id}-limb)`} />}
         {def.blobs.map((b, i) => (
           <Ellipse key={i} cx={b.cx * w} cy={b.cy * h} rx={b.rx * w} ry={b.ry * h} fill={`url(#${id}-b${i})`} />
         ))}
