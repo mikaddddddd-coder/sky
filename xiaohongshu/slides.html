@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<title>Look Up — 小红书预热图</title>
+<!-- One slide per #1…#3, 1080×1440. Render each with headless Chrome:
+     --window-size=1080,1440 --screenshot  slides.html#1 → teaser/01.png -->
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1080px; height: 1440px; overflow: hidden; background: #050611; }
+body { font-family: system-ui, "PingFang SC", sans-serif; font-weight: 300; -webkit-font-smoothing: antialiased; color: #F5F3FF; }
+.slide { position: absolute; inset: 0; overflow: hidden; display: none; }
+.slide.on { display: block; }
+.grain::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .22; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1.6 -.3'/></filter><rect width='300' height='300' filter='url(%23n)'/></svg>"); }
+.kicker { font-family: system-ui; font-weight: 900; font-stretch: 75%; font-size: 36px; letter-spacing: .02em; opacity: .9; }
+.h1 { font-family: "PingFang SC"; font-weight: 300; font-size: 72px; line-height: 1.3; letter-spacing: .06em; }
+.p { font-size: 31px; line-height: 1.7; opacity: .78; letter-spacing: .05em; }
+.thin { font-family: system-ui; font-weight: 200; font-stretch: 120%; font-variant-numeric: tabular-nums; }
+.tag { display: inline-flex; align-items: center; height: 62px; padding: 0 30px; border-radius: 99px; font-size: 27px; letter-spacing: .08em; border: 1.5px solid rgba(255,255,255,.75); }
+.card { position: absolute; border-radius: 40px; overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.08); }
+.card img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.brandrow { position: absolute; left: 72px; right: 72px; bottom: 96px; display: flex; align-items: center; gap: 28px; }
+.icon { width: 112px; height: 112px; border-radius: 26px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.5); flex: none; }
+.icon img { width: 100%; height: 100%; display: block; }
+.name { font-family: system-ui; font-weight: 300; font-stretch: 150%; font-size: 50px; letter-spacing: .02em; line-height: 1.1; }
+.name-zh { font-family: "PingFang SC"; font-weight: 300; font-size: 32px; letter-spacing: .4em; margin-top: 8px; opacity: .85; }
+.badge { display: inline-flex; align-items: center; gap: 14px; height: 104px; padding: 0 32px 0 26px; border: 2px solid rgba(255,255,255,.85); border-radius: 22px; }
+.badge .apple { font-family: system-ui; font-size: 64px; line-height: 1; margin-top: -10px; }
+.badge .t1 { font-size: 20px; font-weight: 500; }
+.badge .t2 { font-size: 46px; font-weight: 600; letter-spacing: -.01em; }
+</style>
+</head>
+<body>
+
+<!-- 1 封面：今晚的晚霞，一个大数字 -->
+<section class="slide grain" id="s1" style="background:#07081A">
+  <!-- The opening screen's corner glow -->
+  <div style="position:absolute;left:-380px;top:-380px;width:1100px;height:1100px;border-radius:50%;background:radial-gradient(circle,rgba(255,92,40,.55),rgba(255,92,40,.12) 45%,transparent 70%)"></div>
+  <div style="position:absolute;left:72px;top:96px;right:72px">
+    <div class="kicker">LOOK UP</div>
+    <div class="h1" style="margin-top:22px">我做了一个<br>提醒你抬头看天的 App</div>
+    <div class="p" style="margin-top:18px">今晚的晚霞值不值得出门，打开就知道</div>
+  </div>
+  <!-- Dusk band, the colours of the Tonight screen at sunset -->
+  <div style="position:absolute;left:0;right:0;top:600px;height:560px;background:linear-gradient(180deg,rgba(7,8,26,0) 0%,#2B2D55 18%,#6A3F72 42%,#C2566A 64%,#F08A5D 80%,rgba(7,8,26,0) 100%)"></div>
+  <div style="position:absolute;left:0;right:0;top:600px;height:560px;background:radial-gradient(ellipse 40% 30% at 62% 78%,rgba(255,214,150,.55),transparent 70%)"></div>
+  <div style="position:absolute;left:0;right:0;top:640px;text-align:center">
+    <div class="thin" style="font-size:300px;line-height:1;letter-spacing:-.02em;color:#fff">94<span style="font-size:90px;vertical-align:top;margin-left:10px;opacity:.85">%</span></div>
+    <div style="font-family:'PingFang SC';font-size:34px;letter-spacing:.3em;margin-top:24px;opacity:.95">今晚 · 晚霞会很美</div>
+  </div>
+  <div class="brandrow">
+    <div class="icon"><img src="assets/icon.png"></div>
+    <div style="flex:1">
+      <div class="name">Look Up</div>
+      <div class="name-zh">天色</div>
+    </div>
+    <span class="tag">即将上线 · COMING SOON</span>
+  </div>
+</section>
+
+<!-- 2 今晚的天空：椭圆窗口 + 弹出来的模块（参考图的构图） -->
+<section class="slide grain" id="s2" style="background:linear-gradient(180deg,#5D6A86 0%,#2A3150 38%,#0B0C17 70%,#050509 100%)">
+  <div style="position:absolute;left:72px;top:96px;right:72px">
+    <div class="kicker">TONIGHT'S SKY</div>
+    <div class="h1" style="margin-top:18px;font-size:64px">晚霞、月亮、金星、流星雨</div>
+    <div class="p" style="margin-top:14px">抬头之前，先看一眼今晚的天</div>
+  </div>
+  <!-- Capsule window onto the dusk sky -->
+  <div style="position:absolute;left:230px;top:420px;width:620px;height:960px;border-radius:310px;overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.45)">
+    <img src="assets/sky-dusk.png" style="position:absolute;left:-90px;top:0;width:800px;height:960px;object-fit:cover">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(10,8,20,.75))"></div>
+  </div>
+  <!-- Phone in the capsule -->
+  <div style="position:absolute;left:375px;top:560px;width:330px;height:717px;border-radius:52px;overflow:hidden;box-shadow:0 0 0 9px #0d0d0d,0 0 0 11px #3a3a3a,0 40px 80px rgba(0,0,0,.55)">
+    <img src="assets/glow.png" style="width:100%;height:100%;object-fit:cover;display:block">
+  </div>
+  <!-- Floating modules -->
+  <div class="card" style="left:60px;top:470px;width:300px;height:377px;border-radius:44px;transform:rotate(-4deg)"><img src="assets/card-moon.png"></div>
+  <div class="card" style="right:52px;top:620px;width:300px;height:377px;border-radius:44px;transform:rotate(4deg)"><img src="assets/card-venus.png"></div>
+  <div class="card" style="left:44px;top:1060px;width:470px;height:223px;border-radius:36px;transform:rotate(-2deg)"><img src="assets/card-sun.png"></div>
+  <div class="card" style="right:40px;top:1135px;width:500px;height:184px;border-radius:30px;transform:rotate(2deg)"><img src="assets/card-events.png"></div>
+</section>
+
+<!-- 3 生日的月亮 -->
+<section class="slide grain" id="s3" style="background:#050507">
+  <div style="position:absolute;left:72px;top:96px;right:72px">
+    <div class="kicker">THE MOON ON YOUR BIRTHDAY</div>
+    <div class="h1" style="margin-top:18px">你出生那天的月亮，<br>是什么样子？</div>
+    <div class="p" style="margin-top:14px">选一下生日，存成一张月亮海报</div>
+  </div>
+  <div style="position:absolute;left:50%;top:520px;width:1100px;height:900px;margin-left:-550px;background:radial-gradient(ellipse at 50% 40%,rgba(120,130,170,.18),transparent 60%)"></div>
+  <div class="card" style="left:311px;top:452px;width:458px;height:760px;border-radius:36px;box-shadow:0 40px 100px rgba(0,0,0,.8),0 0 0 1.5px rgba(255,255,255,.12)"><img src="assets/poster.png"></div>
+  <div class="brandrow" style="bottom:72px">
+    <div class="icon" style="width:96px;height:96px;border-radius:22px"><img src="assets/icon.png"></div>
+    <div style="flex:1">
+      <div class="name" style="font-size:44px">Look Up</div>
+      <div class="name-zh" style="font-size:28px">天色 · 即将上线</div>
+    </div>
+    <div class="badge">
+      <span class="apple">&#xF8FF;</span>
+      <span style="display:flex;flex-direction:column;font-family:system-ui;line-height:1.05">
+        <span class="t1">Coming soon on the</span><span class="t2">App Store</span>
+      </span>
+    </div>
+  </div>
+</section>
+
+<script>
+const show = () => {
+  const n = (location.hash || '#1').slice(1);
+  document.querySelectorAll('.slide').forEach((s) => s.classList.toggle('on', s.id === 's' + n));
+};
+addEventListener('hashchange', show);
+show();
+</script>
+</body>
+</html>

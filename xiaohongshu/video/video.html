@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<title>Look Up — teaser video</title>
+<!-- A 30 s, 1080×1440 teaser drawn frame by frame: render(t) puts every element where it
+     belongs at t seconds. render.mjs steps t at 30 fps and screenshots each frame.
+     Open with #12.5 to see a single moment in a browser. -->
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1080px; height: 1440px; overflow: hidden; }
+body { font-family: system-ui, "PingFang SC", sans-serif; -webkit-font-smoothing: antialiased; background: #ECEAE6; }
+.abs { position: absolute; }
+.scene { position: absolute; inset: 0; will-change: transform, filter, opacity; }
+.corner { position: absolute; font-size: 22px; letter-spacing: .04em; color: #77736C; }
+.line { font-family: "PingFang SC"; font-weight: 300; letter-spacing: .04em; line-height: 1.22; white-space: pre; }
+.card { position: absolute; border-radius: 44px; overflow: hidden; box-shadow: 0 40px 80px rgba(40,30,20,.28), 0 0 0 1px rgba(255,255,255,.06); }
+.card img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.thin { font-family: system-ui; font-weight: 200; font-stretch: 120%; font-variant-numeric: tabular-nums; }
+.lab { font-size: 22px; letter-spacing: .12em; color: rgba(245,243,255,.62); }
+.statl { font-size: 21px; color: rgba(245,243,255,.6); }
+.statv { font-size: 30px; font-weight: 500; color: #F5F3FF; font-variant-numeric: tabular-nums; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<!-- Night ground for the ending -->
+<div id="night" class="abs" style="inset:0;background:#07081A;opacity:0">
+  <div style="position:absolute;left:-420px;top:-420px;width:1200px;height:1200px;border-radius:50%;background:radial-gradient(circle,rgba(255,92,40,.6),rgba(255,92,40,.14) 45%,transparent 70%)"></div>
+</div>
+
+<!-- Corner labels, as in the reference -->
+<div id="corners">
+  <div class="corner" style="left:56px;top:52px;font-weight:600;color:#3A3732">LOOK UP</div>
+  <div class="corner" style="right:56px;top:52px">天色</div>
+  <div class="corner" style="left:56px;bottom:52px">即将上线 · Coming soon</div>
+  <div class="corner" style="right:56px;bottom:52px;width:300px;text-align:right;font-size:17px;line-height:1.5">抬头之前，先看一眼今晚的天空。<br>晚霞、月亮、金星和流星雨。</div>
+</div>
+
+<!-- 1 Intro -->
+<div id="s1" class="scene">
+  <div id="l1" class="line abs" style="left:0;right:0;top:600px;text-align:center;font-size:92px"></div>
+  <div id="l1b" class="line abs" style="left:0;right:0;top:720px;text-align:center;font-size:92px"></div>
+</div>
+
+<!-- 2 Sunset glow card counting up -->
+<div id="s2" class="scene">
+  <div id="l2" class="line abs" style="left:72px;top:520px;font-size:66px"></div>
+  <div id="glowcard" class="card" style="left:470px;top:330px;width:540px;height:760px">
+    <div id="glowbg" class="abs" style="inset:0"></div>
+    <div id="glowsun" class="abs" style="inset:0"></div>
+    <div class="abs" style="left:44px;top:46px"><div class="lab">晚霞 · 上海</div></div>
+    <div id="glowtitle" class="abs" style="left:44px;top:96px;font-family:'PingFang SC';font-weight:600;font-size:46px;color:#7CF2B0"></div>
+    <div class="abs thin" style="left:30px;top:250px;color:#fff;font-size:260px;line-height:1"><span id="glownum">0</span><span style="font-size:70px;vertical-align:top;margin-left:6px;opacity:.8">%</span></div>
+    <div class="abs" style="left:44px;top:560px;font-size:24px;color:rgba(245,243,255,.7)">出现概率</div>
+    <div class="abs" style="left:44px;bottom:50px;display:flex;gap:60px">
+      <div><div class="statl">鲜艳度</div><div id="glowviv" class="statv">0</div></div>
+      <div><div class="statl">气溶胶</div><div class="statv">0.21 通透</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 3 Modules pop out around a capsule window onto the sky -->
+<div id="s3" class="scene">
+  <div id="l3" class="line abs" style="left:72px;top:130px;font-size:66px"></div>
+  <div id="capsule" class="abs" style="left:250px;top:330px;width:580px;height:900px;border-radius:290px;overflow:hidden;box-shadow:0 40px 90px rgba(40,30,20,.3)">
+    <img src="../assets/sky-dusk.png" style="position:absolute;left:-110px;top:0;width:800px;height:900px;object-fit:cover">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(10,8,20,.7))"></div>
+  </div>
+  <div id="phone" class="abs" style="left:385px;top:470px;width:310px;height:674px;border-radius:50px;overflow:hidden;box-shadow:0 0 0 9px #0d0d0d,0 0 0 11px #3a3a3a,0 40px 80px rgba(0,0,0,.45)">
+    <img src="../assets/glow.png" style="width:100%;height:100%;object-fit:cover;display:block">
+  </div>
+  <div id="m1" class="card" style="left:56px;top:380px;width:300px;height:377px"><img src="../assets/card-moon.png"></div>
+  <div id="m2" class="card" style="left:724px;top:560px;width:300px;height:377px"><img src="../assets/card-venus.png"></div>
+  <div id="m3" class="card" style="left:40px;top:960px;width:470px;height:223px;border-radius:36px"><img src="../assets/card-sun.png"></div>
+  <div id="m4" class="card" style="left:540px;top:1080px;width:500px;height:184px;border-radius:30px"><img src="../assets/card-events.png"></div>
+</div>
+
+<!-- 4 The moon through its phases -->
+<div id="s4" class="scene">
+  <div id="l4" class="line abs" style="left:72px;top:520px;font-size:66px"></div>
+  <div id="mooncard" class="card" style="left:470px;top:330px;width:540px;height:760px;background:linear-gradient(180deg,#1C2038,#0A0B14)">
+    <div class="abs" style="left:44px;top:46px"><div class="lab">月亮 · 上海</div></div>
+    <svg class="abs" style="left:95px;top:110px" width="350" height="350" viewBox="0 0 100 100">
+      <defs>
+        <clipPath id="disc"><circle cx="50" cy="50" r="47"/></clipPath>
+        <radialGradient id="halo" cx="50%" cy="50%" r="50%"><stop offset=".9" stop-color="#FFF6E0" stop-opacity=".22"/><stop offset="1" stop-color="#FFF6E0" stop-opacity="0"/></radialGradient>
+      </defs>
+      <circle cx="50" cy="50" r="50" fill="url(#halo)"/>
+      <image href="../assets/moon.jpg" x="-1" y="-1" width="102" height="102" clip-path="url(#disc)" preserveAspectRatio="xMidYMid slice"/>
+      <g id="shade" clip-path="url(#disc)"></g>
+    </svg>
+    <div id="phase" class="abs" style="left:44px;top:500px;font-family:'PingFang SC';font-weight:600;font-size:44px;color:#F5F3FF"></div>
+    <div class="abs" style="left:44px;bottom:50px;display:flex;gap:56px">
+      <div><div class="statl">照亮</div><div id="lit" class="statv">0%</div></div>
+      <div><div class="statl">月出</div><div class="statv">14:49</div></div>
+      <div><div class="statl">月落</div><div class="statv">04:41</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 5 The birthday poster -->
+<div id="s5" class="scene">
+  <div id="l5" class="line abs" style="left:72px;top:480px;font-size:66px"></div>
+  <div id="poster" class="card" style="left:540px;top:300px;width:470px;height:780px;border-radius:34px;box-shadow:0 50px 100px rgba(20,15,10,.45)"><img src="../assets/poster.png"></div>
+</div>
+
+<!-- 6 Ending -->
+<div id="s6" class="scene">
+  <div id="endicon" class="abs" style="left:440px;top:500px;width:200px;height:200px;border-radius:46px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6)"><img src="../assets/icon.png" style="width:100%;height:100%"></div>
+  <div id="endname" class="abs" style="left:0;right:0;top:760px;text-align:center;color:#F5F3FF">
+    <div style="font-family:system-ui;font-weight:300;font-stretch:150%;font-size:76px;letter-spacing:.02em">Look Up</div>
+    <div style="font-family:'PingFang SC';font-weight:300;font-size:40px;letter-spacing:.5em;margin-top:14px;padding-left:.5em;opacity:.85">天色</div>
+  </div>
+  <div id="endtag" class="abs" style="left:0;right:0;top:1010px;text-align:center">
+    <span style="display:inline-flex;align-items:center;height:66px;padding:0 34px;border-radius:99px;border:1.5px solid rgba(255,255,255,.75);color:#F5F3FF;font-size:28px;letter-spacing:.1em">即将上线 · COMING SOON</span>
+  </div>
+</div>
+
+<script>
+// ---- helpers -------------------------------------------------------------
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const easeOut = (p) => 1 - Math.pow(1 - clamp(p), 3);
+const easeInOut = (p) => { p = clamp(p); return p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; };
+// Overshoots a little and settles: the "jump" for cards popping in.
+const spring = (p) => (p <= 0 ? 0 : 1 - Math.exp(-6.5 * p) * Math.cos(11 * p));
+const mix = (c1, c2, p) => {
+  const h = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+  const a = h(c1), b = h(c2);
+  return `rgb(${a.map((v, i) => Math.round(lerp(v, b[i], clamp(p)))).join(',')})`;
+};
+
+// Lines that light up one character at a time, gray to ink, as in the reference.
+function makeLine(id, text) {
+  const el = $(id);
+  el.innerHTML = [...text].map((c) => (c === '\n' ? '<br>' : `<span>${c}</span>`)).join('');
+  return [...el.querySelectorAll('span')];
+}
+function lightLine(spans, t, start, per = 0.06, dark = '#1D1B18', light = '#C9C4BB') {
+  spans.forEach((s, i) => { s.style.color = mix(light, dark, (t - start - i * per) / 0.25); });
+}
+
+// A scene's presence: blur and fade in, hold, then blur and fade out (slightly smaller).
+function presence(el, t, a, b, fin = 0.5, fout = 0.5) {
+  const i = easeOut((t - a) / fin), o = easeInOut((t - (b - fout)) / fout);
+  const v = t < a || t > b ? 0 : Math.min(i, 1 - o);
+  el.style.opacity = v;
+  el.style.filter = v >= 0.999 ? 'none' : `blur(${(1 - v) * 18}px)`;
+  el.style.transform = `scale(${lerp(0.96, 1, v) - o * 0.02})`;
+  el.style.visibility = v <= 0 ? 'hidden' : 'visible';
+  return v;
+}
+// A card that jumps in: spring scale from 0.7, blur clearing, a little rise.
+function pop(el, t, start, rot = 0, dur = 1.1) {
+  const p = (t - start) / dur;
+  const s = p <= 0 ? 0 : spring(p);
+  el.style.opacity = clamp(p * 3);
+  el.style.filter = p >= 0.5 ? 'none' : `blur(${(1 - clamp(p * 2)) * 14}px)`;
+  el.style.transform = `translateY(${(1 - s) * 60}px) scale(${lerp(0.7, 1, s)}) rotate(${rot * clamp(s)}deg)`;
+}
+// Gentle drift so held frames still breathe.
+const drift = (t, seed, amp = 6) => Math.sin(t * 0.9 + seed) * amp;
+
+// ---- moon shading, the same geometry as the app's MoonDisc ---------------
+function shadowPath(k) {
+  const C = 50, R = 47, rx = Math.abs(1 - 2 * k) * R, gib = k > 0.5 ? 1 : 0;
+  return `M${C} ${C - R} A${R} ${R} 0 0 0 ${C} ${C + R} A${rx} ${R} 0 0 ${gib} ${C} ${C - R} Z`;
+}
+function shadeMoon(illum, waxing) {
+  const g = $('shade');
+  const flip = waxing ? '' : 'translate(100 0) scale(-1 1)';
+  let html = '';
+  for (let i = 0; i < 25; i++) html += `<path d="${shadowPath(clamp(illum + (i - 12) * 0.005, 0, 1))}" fill="#0B0A09" fill-opacity="0.046"/>`;
+  // A darker core so the night side reads as night at this size.
+  html += `<path d="${shadowPath(clamp(illum + 0.03, 0, 1))}" fill="#05060A" fill-opacity="0.72"/>`;
+  g.setAttribute('transform', flip);
+  g.innerHTML = illum < 0.985 ? html : '';
+}
+const PHASES = [[0.03, '新月'], [0.35, '蛾眉月'], [0.6, '上弦月'], [0.97, '盈凸月'], [1.01, '满月']];
+
+// ---- content -------------------------------------------------------------
+const L1 = makeLine('l1', '抬头看看'), L1b = makeLine('l1b', '今晚的天空');
+const L2 = makeLine('l2', '今晚的\n晚霞，\n值不值得\n出门看？');
+const L3 = makeLine('l3', '晚霞、月亮、\n金星、流星雨');
+const L4 = makeLine('l4', '每一晚的\n月亮，\n都不一样');
+const L5 = makeLine('l5', '你出生\n那天的\n月亮，\n是什么样子？');
+
+// ---- timeline (seconds) ----------------------------------------------------
+const T = { s1: [0, 3.4], s2: [3.2, 9.6], s3: [9.4, 15.6], s4: [15.4, 21.0], s5: [20.8, 26.4], s6: [26.2, 30.2] };
+
+function render(t) {
+  // 1 Intro
+  presence($('s1'), t, T.s1[0], T.s1[1], 0.3);
+  lightLine(L1, t, 0.4, 0.12);
+  lightLine(L1b, t, 1.0, 0.1);
+
+  // 2 Glow card: the number climbs while the card warms from gray to fire.
+  if (presence($('s2'), t, ...T.s2) > 0) {
+    lightLine(L2, t, 3.5, 0.07);
+    pop($('glowcard'), t, 3.6);
+    const p = easeInOut((t - 4.4) / 3.2);
+    const v = Math.round(94 * p);
+    $('glownum').textContent = v;
+    $('glowviv').textContent = `${Math.round(42 * p)} ${v >= 50 ? '颜色一般' : '颜色偏淡'}`;
+    $('glowtitle').textContent = v >= 85 ? '晚霞会很美' : v >= 50 ? '值得期待' : v >= 25 ? '或有一抹余晖' : '安静的黄昏';
+    $('glowtitle').style.color = v >= 85 ? '#7CF2B0' : '#F5F3FF';
+    $('glowbg').style.background = `linear-gradient(160deg, ${mix('#3A3D4E', '#2B2D55', p)} 0%, ${mix('#45475A', '#6A3F72', p)} 50%, ${mix('#4E4F60', '#C2566A', p)} 100%)`;
+    $('glowsun').style.background = `radial-gradient(ellipse 70% 40% at 80% 100%, rgba(255,170,110,${0.75 * p}), transparent 70%)`;
+    $('glowcard').style.marginTop = `${drift(t, 1, 4)}px`;
+  }
+
+  // 3 Capsule window and modules jumping out one by one
+  if (presence($('s3'), t, ...T.s3) > 0) {
+    lightLine(L3, t, 9.7, 0.06);
+    pop($('capsule'), t, 9.6, 0, 1.3);
+    pop($('phone'), t, 10.0, 0, 1.2);
+    pop($('m1'), t, 10.8, -4);
+    pop($('m2'), t, 11.3, 4);
+    pop($('m3'), t, 11.8, -2);
+    pop($('m4'), t, 12.3, 2);
+    ['m1', 'm2', 'm3', 'm4'].forEach((id, i) => { $(id).style.marginTop = `${drift(t, i * 1.7, 7)}px`; });
+  }
+
+  // 4 Moon: a month of phases in four seconds, settling on tonight's.
+  if (presence($('s4'), t, ...T.s4) > 0) {
+    lightLine(L4, t, 15.7, 0.07);
+    pop($('mooncard'), t, 15.8);
+    const p = easeInOut((t - 16.4) / 3.4);
+    const illum = lerp(0.02, 0.93, p);
+    shadeMoon(illum, true);
+    $('phase').textContent = PHASES.find(([k]) => illum < k)[1];
+    $('lit').textContent = `${Math.round(illum * 100)}%`;
+    $('mooncard').style.marginTop = `${drift(t, 2, 4)}px`;
+  }
+
+  // 5 Birthday poster
+  if (presence($('s5'), t, ...T.s5) > 0) {
+    lightLine(L5, t, 21.1, 0.06);
+    pop($('poster'), t, 21.6, 3, 1.3);
+    $('poster').style.marginTop = `${drift(t, 3, 5)}px`;
+  }
+
+  // 6 Night falls; the icon blurs in.
+  const n = easeInOut((t - 26.0) / 0.9);
+  $('night').style.opacity = n;
+  $('corners').style.opacity = 1 - n;
+  presence($('s6'), t, T.s6[0], T.s6[1], 0.3, 0.01);
+  const ip = easeOut((t - 26.6) / 1.2);
+  $('endicon').style.opacity = ip;
+  $('endicon').style.filter = ip > 0.99 ? 'none' : `blur(${(1 - ip) * 24}px)`;
+  $('endicon').style.transform = `scale(${lerp(0.82, 1, ip)})`;
+  const np = easeOut((t - 27.4) / 1.0);
+  $('endname').style.opacity = np;
+  $('endname').style.transform = `translateY(${(1 - np) * 24}px)`;
+  $('endtag').style.opacity = easeOut((t - 28.2) / 0.8);
+}
+window.render = render;
+window.DURATION = 30;
+
+const hash = parseFloat(location.hash.slice(1));
+render(isNaN(hash) ? 0 : hash);
+</script>
+</body>
+</html>
