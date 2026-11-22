@@ -70,7 +70,8 @@ const styles = StyleSheet.create({
   top: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   // Open sky for the comet, above the panel.
   sky: { flex: 1, minHeight: 240 },
-  panelWrap: { maxHeight: '54%', marginHorizontal: spacing.md },
+  // Shrinks on shorter screens, so its bottom margin keeps it clear of the close button.
+  panelWrap: { maxHeight: '54%', flexShrink: 1, marginHorizontal: spacing.md },
   panel: { padding: 0, gap: 0, flexShrink: 1 },
   // Extra room at the end so the note can scroll clear of the close button.
   panelContent: { padding: spacing.lg, paddingBottom: spacing.xl * 2, gap: spacing.lg },
