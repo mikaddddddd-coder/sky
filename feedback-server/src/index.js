@@ -75,11 +75,11 @@ const bad = (why) => new Response(why, { status: 400 });
 const html = (body) => new Response(body, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 
 const PRIVACY = `<!doctype html>
-<html lang="zh">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>天色 · Look Up 隐私政策</title>
+<title>Look Up Privacy Policy · 天色隐私政策</title>
 <style>
   :root { color-scheme: light dark; }
   body { font: 12px/1.75 -apple-system, system-ui, sans-serif; max-width: 640px; margin: 0 auto; padding: 28px 20px 56px; }
@@ -90,32 +90,8 @@ const PRIVACY = `<!doctype html>
 </style>
 </head>
 <body>
-<h1>天色 · Look Up 隐私政策</h1>
-<p class="dim">生效日期：2026 年 11 月 2 日</p>
-<p>「天色 · Look Up」（以下简称「本应用」）无需注册账号，不展示广告，不进行跨应用追踪，也不会出售或向第三方提供你的个人信息。</p>
-
-<h2>一、位置信息</h2>
-<p>经你授权后，本应用使用设备位置计算当地的日落时间和天象，位置信息保存在你的设备上。获取天气数据时，所在地或所关注城市的经纬度会发送至天气数据服务 Open-Meteo。</p>
-
-<h2>二、日落后回访</h2>
-<p>日落后，本应用可能请你评价当晚的天空。仅当你作答时，你的评价、城市及其大致坐标（精度约 1 公里）、当晚的观赏指数，以及一个安装时随机生成的标识符会发送至我们的服务器，用于改进观赏指数的算法。这些信息无法与你本人建立关联，我们也不记录你的 IP 地址。你可以在「设置 → 帮助改进观赏指数 → 日落反馈」中关闭此功能。</p>
-
-<h2>三、出生信息</h2>
-<p>「出生天象」中填写的出生日期和地点只保存在你的设备上，用于在本机计算当天的天象，不会上传。搜索出生城市时，搜索词会发送至 Open-Meteo 的城市搜索服务。</p>
-
-<h2>四、第三方服务</h2>
-<p>天气与城市搜索数据来自 Open-Meteo，城市名称由 Apple 系统定位服务解析，回访服务器由 Cloudflare 托管。</p>
-
-<h2>五、政策更新</h2>
-<p>本政策如有更新，将在本页面发布并注明生效日期。</p>
-
-<h2>六、联系我们</h2>
-<p>如有疑问，请发送邮件至 ${CONTACT_EMAIL}。</p>
-
-<hr>
-
-<h1 lang="en">Look Up Privacy Policy</h1>
-<p class="dim">Effective 2 November 2026</p>
+<h1>Look Up Privacy Policy</h1>
+<p class="dim">Effective 25 November 2026</p>
 <p>Look Up (the "App") requires no account, shows no advertising, does not track you across apps, and does not sell or share your personal information with third parties.</p>
 
 <h2>1. Location</h2>
@@ -135,5 +111,31 @@ const PRIVACY = `<!doctype html>
 
 <h2>6. Contact</h2>
 <p>Questions? Please email ${CONTACT_EMAIL}.</p>
+
+<hr>
+
+<div lang="zh">
+<h1 lang="zh">天色 · Look Up 隐私政策</h1>
+<p class="dim">生效日期：2026 年 11 月 25 日</p>
+<p>「天色 · Look Up」（以下简称「本应用」）无需注册账号，不展示广告，不进行跨应用追踪，也不会出售或向第三方提供你的个人信息。</p>
+
+<h2>一、位置信息</h2>
+<p>经你授权后，本应用使用设备位置计算当地的日落时间和天象，位置信息保存在你的设备上。获取天气数据时，所在地或所关注城市的经纬度会发送至天气数据服务 Open-Meteo。</p>
+
+<h2>二、日落后回访</h2>
+<p>日落后，本应用可能请你评价当晚的天空。仅当你作答时，你的评价、城市及其大致坐标（精度约 1 公里）、当晚的观赏指数，以及一个安装时随机生成的标识符会发送至我们的服务器，用于改进观赏指数的算法。这些信息无法与你本人建立关联，我们也不记录你的 IP 地址。你可以在「设置 → 帮助改进观赏指数 → 日落反馈」中关闭此功能。</p>
+
+<h2>三、出生信息</h2>
+<p>「出生天象」中填写的出生日期和地点只保存在你的设备上，用于在本机计算当天的天象，不会上传。搜索出生城市时，搜索词会发送至 Open-Meteo 的城市搜索服务。</p>
+
+<h2>四、第三方服务</h2>
+<p>天气与城市搜索数据来自 Open-Meteo，城市名称由 Apple 系统定位服务解析，回访服务器由 Cloudflare 托管。</p>
+
+<h2>五、政策更新</h2>
+<p>本政策如有更新，将在本页面发布并注明生效日期。</p>
+
+<h2>六、联系我们</h2>
+<p>如有疑问，请发送邮件至 ${CONTACT_EMAIL}。</p>
+</div>
 </body>
 </html>`;
