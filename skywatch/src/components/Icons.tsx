@@ -98,31 +98,6 @@ export function CloudIcon(p: IconProps) {
   );
 }
 
-export function HighCloudIcon(p: IconProps) {
-  return (
-    <Frame {...p}>
-      <Path d="M4 9h11M7 13h13M4 17h9" />
-    </Frame>
-  );
-}
-
-export function DropIcon(p: IconProps) {
-  return (
-    <Frame {...p}>
-      <Path d="M12 3.5s6 6.4 6 10.5a6 6 0 0 1-12 0c0-4.1 6-10.5 6-10.5Z" />
-    </Frame>
-  );
-}
-
-export function UmbrellaIcon(p: IconProps) {
-  return (
-    <Frame {...p}>
-      <Path d="M3.5 12a8.5 8.5 0 0 1 17 0Z" />
-      <Path d="M12 12v6.5a2 2 0 0 1-4 0" />
-    </Frame>
-  );
-}
-
 export function GlobeIcon(p: IconProps) {
   return (
     <Frame {...p}>

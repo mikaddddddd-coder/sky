@@ -152,7 +152,6 @@ export default function GlowScene() {
   const kind: GlowKind = kindParam === 'dawn' ? 'dawn' : 'dusk';
   const r = useCityReport(city);
   const { t, lang, settings } = useSettings();
-  const router = useRouter();
   const member = settings.member;
   const [picked, setPicked] = useState<number | null>(null);
   const index = picked ?? (r ? (kind === 'dawn' ? r.dawnIndex : r.duskIndex) : 0);

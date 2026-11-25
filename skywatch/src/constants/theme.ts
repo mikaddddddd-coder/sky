@@ -2,13 +2,6 @@
 // current sun altitude so the UI follows the real sky.
 export type SkyPhase = 'day' | 'golden' | 'dusk' | 'night';
 
-export const SKY_GRADIENTS: Record<SkyPhase, readonly [string, string, ...string[]]> = {
-  day: ['#3A7BD5', '#6FB1FC', '#BFE3FF'],
-  golden: ['#2B3A67', '#C0566F', '#F7A35C', '#FFD08A'],
-  dusk: ['#0F1033', '#3B2A63', '#8E4A7A', '#E07A5F'],
-  night: ['#03040C', '#0B1030', '#1A2150'],
-};
-
 export const colors = {
   glassFill: 'rgba(255,255,255,0.10)',
   glassFillDark: 'rgba(20,16,40,0.28)',
