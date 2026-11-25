@@ -1,7 +1,7 @@
 // The membership offer, set on the same dusk sky and frosted cards as the
 // Tonight page: what it unlocks, three plans side by side, one button.
 // There is no payment yet, so the button just turns membership on.
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +12,7 @@ import { Text } from '../components/Text';
 import { TonightBackdrop } from '../components/TonightBackdrop';
 import { colors, spacing } from '../constants/theme';
 import type { StringKey } from '../lib/i18n/strings';
-import { useSettings } from '../lib/settings';
+import { PAYMENTS_ENABLED, useSettings } from '../lib/settings';
 
 // Led by what a member uses on any evening: being in the right place, and hearing about it in time.
 const PERKS: { Icon: typeof BellIcon; title: StringKey; desc: StringKey }[] = [
@@ -34,7 +34,12 @@ const CARD_AURA: Aura = { color: '#FF7444', x: 0.85, y: 1, strength: 0.3 };
 const PICKED_AURA: Aura = { color: '#FF7444', x: 0.5, y: 1.1, strength: 0.45 };
 const QUIET_AURA: Aura = { color: '#8FA8FF', x: 0.5, y: 1.1, strength: 0.12 };
 
-export default function MemberScene() {
+// While the app is free there is nothing to buy, so no link of any kind can open the offer.
+export default function MemberRoute() {
+  return PAYMENTS_ENABLED ? <MemberScene /> : <Redirect href="/" />;
+}
+
+function MemberScene() {
   const { t, lang, update } = useSettings();
   const router = useRouter();
   const insets = useSafeAreaInsets();
