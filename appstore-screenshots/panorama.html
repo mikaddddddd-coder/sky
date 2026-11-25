@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Look Up — App Store panorama screenshots</title>
+<!--
+  Six App Store screenshots drawn on one 7920×2868 strip (1320 wide each), in the same layout as
+  What Color's panorama: a light headline on top, a phone below, small cards drifting across the seams.
+  Usage: panorama.html#1 … #6 shows one screenshot (window 1320×2868); #all shows the whole strip.
+  Render: Chrome --headless --window-size=1320,2868 --screenshot
+  Raw screens in raw/ were taken on the iPhone 18 Pro Max simulator (1320×2868), English UI, Lisbon, 2026-11-25.
+-->
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1320px; height: 2868px; overflow: hidden; background: #05060f; }
+body.all { width: 7920px; }
+body { font-family: -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #f5f3ff; }
+#pano { position: absolute; top: 0; width: 7920px; height: 2868px; overflow: hidden;
+  background:
+    radial-gradient(1500px 900px at 1500px 2868px, rgba(255,116,68,.55), transparent 70%),
+    radial-gradient(1400px 800px at 4300px 2900px, rgba(224,122,95,.35), transparent 70%),
+    radial-gradient(1300px 900px at 7300px 2868px, rgba(142,74,122,.45), transparent 70%),
+    linear-gradient(180deg, #070a1f 0%, #121636 38%, #2b2350 70%, #4a2d4f 100%); }
+#pano::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .10; mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1.6 -.3'/></filter><rect width='300' height='300' filter='url(%23n)'/></svg>"); }
+.star { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #fff; }
+.cap { position: absolute; top: 210px; width: 1140px; z-index: 3; }
+.h1 { font-weight: 300; font-size: 112px; line-height: 1.16; letter-spacing: -.01em; }
+.p { margin-top: 40px; font-size: 54px; line-height: 1.45; font-weight: 300; opacity: .62; }
+.phone { position: absolute; width: 900px; height: 1956px; border-radius: 120px; overflow: hidden; background: #000; z-index: 2;
+  box-shadow: 0 0 0 18px #0d0d0d, 0 0 0 21px #4a4a52, 0 60px 140px rgba(0,0,0,.55); }
+.phone img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.card { position: absolute; z-index: 4; border-radius: 52px; padding: 40px 46px; color: #f5f3ff;
+  background: rgba(30,28,58,.72); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.16), 0 40px 90px rgba(0,0,0,.45); }
+.k { font-size: 28px; letter-spacing: .18em; text-transform: uppercase; opacity: .6; }
+.thin { font-weight: 200; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div id="pano">
+
+  <!-- 1 Tonight: phone upright, the alert drifts over its top corner -->
+  <div class="cap" style="left:110px">
+    <div class="h1">Is tonight's sunset<br>worth going out for?</div>
+    <div class="p">A sunset forecast for where you are</div>
+  </div>
+  <div class="phone" style="left:210px;top:830px"><img src="raw/tonight.png"></div>
+
+  <!-- 2 The week: phone tilted, day cards float right and the last one crosses into 3 -->
+  <div class="cap" style="left:1430px">
+    <div class="h1">Find the best<br>evening this week</div>
+    <div class="p">Seven days of sunset and sunrise chances</div>
+  </div>
+  <div class="phone" style="left:1420px;top:960px;transform:rotate(-8deg)"><img src="raw/glow.png"></div>
+
+  <!-- 3 Sun: golden and blue hour -->
+  <div class="cap" style="left:2750px">
+    <div class="h1">Golden hour, blue hour,<br>to the minute</div>
+    <div class="p">And which way to face when the sun goes down</div>
+  </div>
+  <div class="phone" style="left:3020px;top:900px;transform:rotate(7deg)"><img src="raw/sun.png"></div>
+
+  <!-- 4 Moon -->
+  <div class="cap" style="left:4070px">
+    <div class="h1">The moon,<br>night by night</div>
+    <div class="p">Phase, moonrise and how clear it will look</div>
+  </div>
+  <div class="phone" style="left:4110px;top:830px"><img src="raw/moon.png"></div>
+
+  <!-- 5 Sky events, with a Venus card pressed against the phone -->
+  <div class="cap" style="left:5390px">
+    <div class="h1">Venus, meteor showers<br>and the rest of the sky</div>
+    <div class="p">Know when it is worth looking up</div>
+  </div>
+  <div class="phone" style="left:5620px;top:960px;transform:rotate(-6deg)"><img src="raw/events.png"></div>
+
+  <!-- 6 Birth Sky -->
+  <div class="cap" style="left:6710px">
+    <div class="h1">The sky on the day<br>you were born</div>
+    <div class="p">Your birthday moon, saved as a poster</div>
+  </div>
+  <div class="phone" style="left:6920px;top:900px;transform:rotate(5deg)"><img src="raw/birth.png"></div>
+</div>
+
+<script>
+const pano = document.getElementById('pano');
+const add = html => pano.insertAdjacentHTML('beforeend', html);
+
+// A sprinkle of stars in the upper sky, fixed so every render is the same.
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+for (let i = 0; i < 160; i++) {
+  const x = rnd() * 7920, y = rnd() * 1500, s = 2 + rnd() * 4, o = .15 + rnd() * .5;
+  add(`<div class="star" style="left:${x}px;top:${y}px;width:${s}px;height:${s}px;opacity:${o}"></div>`);
+}
+
+// 1: the alert Look Up sends when an evening looks good (text as the app sends it).
+add(`<div class="card" style="left:560px;top:700px;width:700px;transform:rotate(3deg);padding:34px 40px;display:flex;gap:30px;align-items:center;border-radius:46px">
+  <img src="../skywatch/assets/icon.png" style="width:110px;height:110px;border-radius:26px">
+  <div><div style="font-size:34px;font-weight:600">Great sky tonight in Lisbon</div>
+  <div style="font-size:30px;opacity:.75;margin-top:8px">Full moon rising — great for big-moon shots</div></div></div>`);
+
+// 2: three of the week's days drifting right, the last crossing into screenshot 3. Scores as in raw/glow.png.
+[['Today', 44, 2330, 1080, 6, '#FF8A5C'], ['Fri', 12, 2420, 1560, -4, '#8FA8FF'], ['Tue', 36, 2560, 2050, 8, '#FFB07A']].forEach(([d, n, x, y, r, c]) => {
+  add(`<div class="card" style="left:${x}px;top:${y}px;width:360px;height:360px;transform:rotate(${r}deg);
+      background:linear-gradient(180deg,rgba(40,34,72,.85),rgba(90,48,70,.85))">
+    <div class="k">${d}</div>
+    <div class="thin" style="font-size:150px;line-height:1;margin-top:34px;color:${c}">${n}<span style="font-size:50px;opacity:.7">%</span></div>
+    <div style="font-size:26px;opacity:.55;margin-top:18px">Sunset chance</div></div>`);
+});
+
+// 5: Venus, from raw/venus.png, leaning on the phone's left edge.
+add(`<div class="card" style="left:6000px;top:1120px;width:520px;transform:rotate(4deg)">
+  <div class="k">Venus · Lisbon</div>
+  <div style="display:flex;align-items:center;gap:26px;margin-top:26px">
+    <div style="width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,#fff8e0 0 18%,rgba(255,230,170,.5) 30%,transparent 70%)"></div>
+    <div><div style="font-size:40px;font-weight:600">Morning star</div><div style="font-size:28px;opacity:.6">East before dawn</div></div></div>
+  <div class="thin" style="font-size:120px;line-height:1;margin-top:30px">07:01</div>
+  <div style="display:flex;gap:44px;margin-top:22px;font-size:28px;opacity:.75"><span>Alt 28°</span><span>Mag −4.9</span><span>SE</span></div></div>`);
+
+const n = location.hash.slice(1) || '1';
+if (n === 'all') document.body.classList.add('all');
+else pano.style.left = -(Number(n) - 1) * 1320 + 'px';
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<!-- Product page header for Look Up, after What Color's clean.html: the icon's dusk (deep night above,
+     an orange glow rising from the horizon) with a little grain and stars, one thin line of type.
+     Render: Chrome --headless --window-size=2622,1475 --force-device-scale-factor=2 → 5244×2950 -->
+<html><head><meta charset="utf-8"><style>
+html,body{margin:0;width:2622px;height:1475px;overflow:hidden}
+body{background:
+  radial-gradient(1500px 620px at 50% 108%, rgba(255,138,76,.95), rgba(255,116,68,.55) 38%, transparent 72%),
+  radial-gradient(900px 380px at 50% 100%, rgba(255,196,140,.75), transparent 70%),
+  linear-gradient(180deg,#05061a 0%,#0d1236 34%,#2b2350 62%,#6a3552 84%,#b04e3e 100%)}
+body::after{content:"";position:absolute;inset:0;opacity:.14;mix-blend-mode:overlay;
+background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1.6 -.3'/></filter><rect width='300' height='300' filter='url(%23n)'/></svg>")}
+.s{position:absolute;border-radius:50%;background:#fff}
+#t{position:absolute;left:0;right:0;top:35%;transform:translateY(-50%);text-align:center;color:#fff;
+font-family:system-ui;text-shadow:0 0 60px rgba(255,140,90,.25),0 4px 24px rgba(20,10,40,.35)}
+#t .n{font-weight:300;font-stretch:150%;font-size:120px;letter-spacing:.02em}
+#t .p{margin-top:26px;font-weight:300;font-size:40px;letter-spacing:.32em;opacity:.7}
+</style></head><body>
+<div id="t"><div class="n">Look Up</div><div class="p">JUST FOR A MOMENT</div></div>
+<script>
+let seed=11;const r=()=>(seed=(seed*16807)%2147483647)/2147483647;
+for(let i=0;i<140;i++){const y=r()*820,s=1.5+r()*3;document.body.insertAdjacentHTML('beforeend',
+`<div class="s" style="left:${r()*2622}px;top:${y}px;width:${s}px;height:${s}px;opacity:${(.15+r()*.55)*(1-y/1000)}"></div>`)}
+</script>
+</body></html>

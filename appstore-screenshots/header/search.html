@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<!-- Search results artwork: the panorama's dusk sky, the question on the left, three screens on the right.
+     Key content sits in the middle so the 3:2 and 16:9 crops both keep it.
+     Render: Chrome --headless --window-size=1920,1280 --force-device-scale-factor=2 → 3840×2560 -->
+<html><head><meta charset="utf-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1920px;height:1280px;overflow:hidden}
+body{font-family:-apple-system,system-ui,sans-serif;color:#f5f3ff;-webkit-font-smoothing:antialiased;background:
+  radial-gradient(1100px 520px at 72% 112%, rgba(255,116,68,.65), transparent 70%),
+  linear-gradient(180deg,#070a1f 0%,#121636 40%,#2b2350 74%,#4a2d4f 100%)}
+body::after{content:"";position:absolute;inset:0;opacity:.10;mix-blend-mode:screen;
+background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1.6 -.3'/></filter><rect width='300' height='300' filter='url(%23n)'/></svg>")}
+.s{position:absolute;border-radius:50%;background:#fff}
+#cap{position:absolute;left:150px;top:50%;transform:translateY(-50%);width:760px}
+#brand{display:flex;align-items:center;gap:26px;margin-bottom:56px}
+#brand img{width:120px;height:120px;border-radius:28px;box-shadow:0 16px 40px rgba(0,0,0,.4)}
+#brand div{font-size:46px;font-weight:600}
+.h1{font-weight:300;font-size:92px;line-height:1.14;letter-spacing:-.01em}
+.p{margin-top:34px;font-size:38px;line-height:1.45;font-weight:300;opacity:.62}
+.phone{position:absolute;width:420px;height:913px;border-radius:58px;overflow:hidden;background:#000;
+  box-shadow:0 0 0 9px #0d0d0d,0 0 0 11px #4a4a52,0 40px 90px rgba(0,0,0,.5)}
+.phone img{display:block;width:100%;height:100%;object-fit:cover}
+</style></head><body>
+<div id="cap">
+  <div id="brand"><img src="../../skywatch/assets/icon.png"><div>Look Up</div></div>
+  <div class="h1">Is tonight's sunset<br>worth going out for?</div>
+  <div class="p">Sunset glow, golden hour, the moon and the night sky</div>
+</div>
+<div class="phone" style="left:1000px;top:240px;transform:rotate(-6deg)"><img src="../raw/glow.png"></div>
+<div class="phone" style="left:1440px;top:300px;transform:rotate(6deg)"><img src="../raw/moon.png"></div>
+<div class="phone" style="left:1210px;top:180px;z-index:2"><img src="../raw/tonight.png"></div>
+<script>
+let seed=5;const r=()=>(seed=(seed*16807)%2147483647)/2147483647;
+for(let i=0;i<90;i++){const s=1.5+r()*3;document.body.insertAdjacentHTML('afterbegin',
+`<div class="s" style="left:${r()*1920}px;top:${r()*700}px;width:${s}px;height:${s}px;opacity:${.15+r()*.5}"></div>`)}
+</script>
+</body></html>
