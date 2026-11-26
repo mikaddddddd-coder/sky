@@ -1,13 +1,12 @@
-import { useRouter } from 'expo-router';
 import { Alert, Linking, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Text } from '../../components/Text';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Group, groupStyles, Row } from '../../components/GroupList';
-import { BellIcon, ChevronRightIcon, CloudIcon, GlobeIcon, LockIcon, SlidersIcon, SparkleIcon, SunsetIcon, TimerIcon } from '../../components/Icons';
+import { BellIcon, ChevronRightIcon, CloudIcon, GlobeIcon, SlidersIcon, SparkleIcon, SunsetIcon, TimerIcon } from '../../components/Icons';
 import { SceneBackground } from '../../components/SceneBackground';
 import { colors, spacing, type } from '../../constants/theme';
 import type { StringKey } from '../../lib/i18n/strings';
-import { glowAlertFor, PAYMENTS_ENABLED, useSettings, type GlowAlert, type Settings } from '../../lib/settings';
+import { useSettings, type GlowAlert, type Settings } from '../../lib/settings';
 
 const PRIVACY_URL = 'https://lookup.minxi.work/privacy';
 
@@ -31,15 +30,6 @@ const LEADS: GlowAlert['leadMin'][] = [60, 120, 180];
 
 export default function SettingsScreen() {
   const { settings, update, t, lang } = useSettings();
-  const router = useRouter();
-  // No payments yet: members can switch it back off to see the free app again.
-  const openMember = () =>
-    settings.member
-      ? Alert.alert(t('memberTitle'), undefined, [
-          { text: t('memberCancelDemo'), style: 'destructive', onPress: () => update({ member: false, guideTaste: null }) },
-          { text: t('close'), style: 'cancel' },
-        ])
-      : router.push('/member');
   const langLabel = (v: Settings['language']) => LANG_OPTIONS.find((o) => o.value === v)?.label || t('langSystem');
 
   const pickLanguage = () =>
@@ -48,28 +38,22 @@ export default function SettingsScreen() {
       { text: t('close'), style: 'cancel' as const },
     ]);
 
-  // Members pick which glows earn an alert and how early; for everyone else the rows show the
-  // defaults behind a lock and lead to the offer.
-  const glowAlert = glowAlertFor(settings);
+  // Which glows earn an alert, and how early.
+  const glowAlert = settings.glowAlert;
   const setGlowAlert = (patch: Partial<GlowAlert>) => update({ glowAlert: { ...settings.glowAlert, ...patch } });
   const leadLabel = (m: number) => t('alertLeadHours', { h: m / 60 });
   const pickLevel = () =>
-    settings.member
-      ? Alert.alert(t('alertLevel'), undefined, [
-          ...LEVELS.map((o) => ({ text: t(o.label), onPress: () => setGlowAlert({ level: o.value }) })),
-          { text: t('close'), style: 'cancel' as const },
-        ])
-      : router.push('/member');
+    Alert.alert(t('alertLevel'), undefined, [
+      ...LEVELS.map((o) => ({ text: t(o.label), onPress: () => setGlowAlert({ level: o.value }) })),
+      { text: t('close'), style: 'cancel' as const },
+    ]);
   const pickLead = () =>
-    settings.member
-      ? Alert.alert(t('alertLead'), undefined, [
-          ...LEADS.map((m) => ({ text: leadLabel(m), onPress: () => setGlowAlert({ leadMin: m }) })),
-          { text: t('close'), style: 'cancel' as const },
-        ])
-      : router.push('/member');
-  const memberValue = (text: string) => (
+    Alert.alert(t('alertLead'), undefined, [
+      ...LEADS.map((m) => ({ text: leadLabel(m), onPress: () => setGlowAlert({ leadMin: m }) })),
+      { text: t('close'), style: 'cancel' as const },
+    ]);
+  const optionValue = (text: string) => (
     <>
-      {!settings.member && <LockIcon color={colors.textDim} size={15} />}
       <Text style={groupStyles.value}>{text}</Text>
       <ChevronRightIcon color={colors.textDim} size={18} />
     </>
@@ -81,15 +65,6 @@ export default function SettingsScreen() {
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>{t('tabSettings')}</Text>
-
-          {PAYMENTS_ENABLED && (
-            <Group>
-              <Row icon={<SunsetIcon color={colors.glow} />} label={t('memberTitle')} onPress={openMember}>
-                <Text style={[groupStyles.value, settings.member && { color: colors.glow }]}>{t(settings.member ? 'memberActive' : 'memberInactive')}</Text>
-                <ChevronRightIcon color={colors.textDim} size={18} />
-              </Row>
-            </Group>
-          )}
 
           <Group title={t('settingsGeneral')}>
             <Row icon={<GlobeIcon color={colors.text} />} label={t('settingsLanguage')} onPress={pickLanguage}>
@@ -114,10 +89,10 @@ export default function SettingsScreen() {
           {settings.alerts.glow && (
             <Group title={t('alertGlowOptions')} footer={t('alertGlowOptionsNote')}>
               <Row icon={<SlidersIcon color={colors.text} />} label={t('alertLevel')} onPress={pickLevel}>
-                {memberValue(t(LEVELS.find((o) => o.value === glowAlert.level)!.label))}
+                {optionValue(t(LEVELS.find((o) => o.value === glowAlert.level)!.label))}
               </Row>
               <Row icon={<BellIcon color={colors.text} />} label={t('alertLead')} onPress={pickLead}>
-                {memberValue(leadLabel(glowAlert.leadMin))}
+                {optionValue(leadLabel(glowAlert.leadMin))}
               </Row>
             </Group>
           )}

@@ -1,12 +1,10 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Text } from '../components/Text';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CloseButton, useCloseButtonClearance } from '../components/CloseButton';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { LockIcon } from '../components/Icons';
 import { GlowSky } from '../components/GlowSky';
 import { easeOut, Rise, useCountUp } from '../components/Motion';
 import { Panel, PanelStat } from '../components/Panel';
@@ -20,18 +18,11 @@ import type { CityReport, GlowDay, GlowKind } from '../lib/sky/report';
 
 const POSITIVE = new Set(['canvas', 'clearWest', 'afterRain', 'clean']);
 const SHEET = '#140C14';
-// The first two days of the outlook are free; the rest are for members.
-const FREE_DAYS = 2;
 const BAR_MAX = 52;
 
-/**
- * The week at a glance: which day is worth it, and a bar per day to tap through.
- * Free users see the first two days; the rest sits under frosted glass with the way in on top,
- * and the headline only promises a 火烧云 when one is really forecast behind it.
- */
-function WeekOutlook({ r, kind, selected, member, onSelect }: { r: CityReport; kind: GlowKind; selected: number; member: boolean; onSelect: (i: number) => void }) {
+/** The week at a glance: which day is worth it, and a bar per day to tap through. */
+function WeekOutlook({ r, kind, selected, onSelect }: { r: CityReport; kind: GlowKind; selected: number; onSelect: (i: number) => void }) {
   const { t, lang } = useSettings();
-  const router = useRouter();
   const days = r.week;
   const glowOf = (d: GlowDay) => (kind === 'dawn' ? d.dawn : d.dusk);
   const weekday = (d: Date) => new Intl.DateTimeFormat(lang === 'zh' ? 'zh-CN' : 'en-US', { timeZone: r.city.timezone, weekday: 'short' }).format(d);
@@ -39,16 +30,13 @@ function WeekOutlook({ r, kind, selected, member, onSelect }: { r: CityReport; k
   const first = kind === 'dawn' ? r.dawnIndex : r.duskIndex;
   const ahead = days.map((d, i) => ({ g: glowOf(d), i })).filter(({ g, i }) => g && i >= first);
   const best = ahead.reduce((a, b) => ((b.g?.score ?? 0) > (a.g?.score ?? 0) ? b : a), ahead[0]);
-  const fireLocked = days.some((d, i) => i >= FREE_DAYS && glowOf(d)?.fire);
-  const headline = member
-    ? best?.g?.fire
-      ? t('weekBestFire', { day: label(best.i) })
-      : t('weekBest', { day: `${label(best.i)} · ${best?.g?.score ?? 0}%` })
-    : t(fireLocked ? 'weekTeaserFire' : 'weekTeaser');
+  const headline = best?.g?.fire
+    ? t('weekBestFire', { day: label(best.i) })
+    : t('weekBest', { day: `${label(best.i)} · ${best?.g?.score ?? 0}%` });
 
   return (
     <View style={styles.weekBlock}>
-      <Text style={[styles.weekHeadline, !member && fireLocked && { color: '#FF8A6B' }]}>{headline}</Text>
+      <Text style={styles.weekHeadline}>{headline}</Text>
       <View style={styles.week}>
         {days.map((d, i) => {
           const g = glowOf(d);
@@ -57,55 +45,24 @@ function WeekOutlook({ r, kind, selected, member, onSelect }: { r: CityReport; k
           // Far days are drawn fainter: a guess, not a forecast to plan around yet.
           const rough = i >= ROUGH_FROM_DAYS;
           return (
-            <Pressable key={i} style={[styles.weekDay, i === selected && styles.weekDayOn]} onPress={() => onSelect(i)} disabled={!member && i >= FREE_DAYS}>
+            <Pressable key={i} style={[styles.weekDay, i === selected && styles.weekDayOn]} onPress={() => onSelect(i)}>
               <Text style={styles.weekScore}>{g ? g.score : '—'}</Text>
               <View style={styles.weekTrack}>
                 <View style={[styles.weekBar, { height: h, backgroundColor: color }, rough && styles.weekBarRough]} />
               </View>
-              <Text style={[styles.weekLabel, member && i === best?.i && styles.weekLabelBest]}>{label(i)}</Text>
+              <Text style={[styles.weekLabel, i === best?.i && styles.weekLabelBest]}>{label(i)}</Text>
             </Pressable>
           );
         })}
-        {!member && (
-          <Pressable style={[styles.weekLock, { left: `${(FREE_DAYS / days.length) * 100}%` }]} onPress={() => router.push('/member')}>
-            <BlurView intensity={22} tint="dark" style={StyleSheet.absoluteFill} />
-            <View style={styles.weekLockPill}>
-              <LockIcon color="#1A0E10" size={14} />
-              <Text style={styles.weekLockText}>{t('weekUnlock')}</Text>
-            </View>
-          </Pressable>
-        )}
       </View>
-      {member && <Text style={styles.weekRough}>{t('weekRough', { from: label(ROUGH_FROM_DAYS) })}</Text>}
+      <Text style={styles.weekRough}>{t('weekRough', { from: label(ROUGH_FROM_DAYS) })}</Text>
     </View>
   );
 }
 
-/**
- * Where to face and when to be there. Members get the times; everyone else sees what it
- * offers behind a lock, the same way into the offer as the week. The first 火烧云 a
- * non-member opens comes with the guide for free, once: the evening it matters most.
- */
-function ShootingGuide({ r, kind, at, g, member }: { r: CityReport; kind: GlowKind; at: Date; g: GlowForecast; member: boolean }) {
-  const { t, lang, settings, update } = useSettings();
-  const router = useRouter();
-  // The sunset's UTC day is enough to tell one glow from the next.
-  const tasteKey = `${kind}:${at.toISOString().slice(0, 10)}`;
-  const tasting = !member && g.fire && (settings.guideTaste == null || settings.guideTaste === tasteKey);
-  useEffect(() => {
-    if (tasting && settings.guideTaste == null) update({ guideTaste: tasteKey });
-  }, [tasting, settings.guideTaste, tasteKey, update]);
-  if (!member && !tasting) {
-    return (
-      <Pressable style={styles.guideLocked} onPress={() => router.push('/member')}>
-        <Text style={styles.guideTeaser}>{t(settings.guideTaste ? 'guideTeaserAfter' : 'guideTeaser')}</Text>
-        <View style={styles.weekLockPill}>
-          <LockIcon color="#1A0E10" size={14} />
-          <Text style={styles.weekLockText}>{t('guideUnlock')}</Text>
-        </View>
-      </Pressable>
-    );
-  }
+/** Where to face and when to be there. */
+function ShootingGuide({ r, kind, at, g }: { r: CityReport; kind: GlowKind; at: Date; g: GlowForecast }) {
+  const { t, lang } = useSettings();
   const guide = shootingGuide(r.city.latitude, r.city.longitude, kind, at, g);
   const time = (d: Date) => formatTime(d, r.city.timezone, lang);
   const span = (s: Span | null) => (s ? `${time(s.from)}–${time(s.to)}` : '—');
@@ -120,12 +77,6 @@ function ShootingGuide({ r, kind, at, g, member }: { r: CityReport; kind: GlowKi
         <PanelStat label={t('guideBlue')} value={span(guide.blue)} />
       </View>
       <Text style={[styles.fireNote, styles.guideTip]}>{t(tipKey, { dir })}</Text>
-      {tasting && (
-        <Pressable style={styles.guideTaste} onPress={() => router.push('/member')}>
-          <Text style={styles.guideTasteText}>{t('guideTaste')}</Text>
-          <Text style={styles.guideTasteLink}>{t('guideTasteMore')} ›</Text>
-        </Pressable>
-      )}
     </>
   );
 }
@@ -151,8 +102,7 @@ export default function GlowScene() {
   const { city, kind: kindParam } = useLocalSearchParams<{ city?: string; kind?: string }>();
   const kind: GlowKind = kindParam === 'dawn' ? 'dawn' : 'dusk';
   const r = useCityReport(city);
-  const { t, lang, settings } = useSettings();
-  const member = settings.member;
+  const { t, lang } = useSettings();
   const [picked, setPicked] = useState<number | null>(null);
   const index = picked ?? (r ? (kind === 'dawn' ? r.dawnIndex : r.duskIndex) : 0);
   const day = r?.week?.[index];
@@ -248,7 +198,7 @@ export default function GlowScene() {
                   {r.week && (
                     <View style={styles.block}>
                       <Text style={styles.section}>{t('weekTitle')}</Text>
-                      <WeekOutlook r={r} kind={kind} selected={index} member={member} onSelect={setPicked} />
+                      <WeekOutlook r={r} kind={kind} selected={index} onSelect={setPicked} />
                     </View>
                   )}
 
@@ -262,7 +212,7 @@ export default function GlowScene() {
 
                   <View style={styles.block}>
                     <Text style={styles.section}>{t('guideTitle')}</Text>
-                    <ShootingGuide r={r} kind={kind} at={at ?? r.glowSunset} g={g} member={member} />
+                    <ShootingGuide r={r} kind={kind} at={at ?? r.glowSunset} g={g} />
                   </View>
 
                   {/* How vivid it would be, beside the chance of it happening. */}
@@ -358,15 +308,7 @@ const styles = StyleSheet.create({
   roughTag: { fontSize: 13, fontWeight: '500', color: colors.textDim },
   weekLabel: { fontSize: 11, color: colors.textDim },
   weekLabelBest: { color: colors.text, fontWeight: '600' },
-  weekLock: { position: 'absolute', right: 0, top: 0, bottom: 0, borderRadius: 14, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  weekLockPill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 14, backgroundColor: 'rgba(255,138,91,0.92)' },
-  weekLockText: { fontSize: 13, fontWeight: '700', color: '#1A0E10' },
-  guideLocked: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, paddingVertical: spacing.xs },
-  guideTeaser: { ...type.caption, color: colors.textDim, flex: 1 },
   guideTip: { marginTop: spacing.sm },
-  guideTaste: { marginTop: spacing.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderRadius: 14, backgroundColor: 'rgba(255,138,91,0.14)', gap: 4 },
-  guideTasteText: { ...type.caption, color: colors.text },
-  guideTasteLink: { ...type.caption, fontWeight: '700', color: '#FF8A6B' },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.16)' },
   method: { ...type.caption, color: colors.textDim },
 });

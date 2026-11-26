@@ -6,11 +6,11 @@ import * as Notifications from 'expo-notifications';
 import { ASK_AFTER_MS, FEEDBACK_CATEGORY, feedbackAskFor, isAnswered, registerFeedbackCategory } from './feedback';
 import { formatTime } from './format';
 import type { Lang, StringKey } from './i18n/strings';
-import { glowAlertFor, type Settings } from './settings';
+import type { Settings } from './settings';
 import type { TonightReport } from './sky/report';
 
 const SKY_THRESHOLD = 70;
-// A 晚霞 this likely is worth heading out for, for members who want to hear about more than 火烧云.
+// A 晚霞 this likely is worth heading out for, for those who want to hear about more than 火烧云.
 const GOOD_GLOW = 50;
 // Alerts already sent or scheduled, keyed by kind, city and evening,
 // each with the time after which the record can be forgotten.
@@ -45,9 +45,9 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 
 type T = (key: StringKey, vars?: Record<string, string | number>) => string;
 
-/** Whether a glow earns an alert: a 火烧云 by default, or also a likely 晚霞 for members who ask. */
+/** Whether a glow earns an alert: a 火烧云 by default, or also a likely 晚霞 for those who ask. */
 export function glowWorthAlert(g: { fire: boolean; score: number } | null | undefined, settings: Settings) {
-  const { level } = glowAlertFor(settings);
+  const { level } = settings.glowAlert;
   return !!g && (g.fire || (level === 'good' && g.score >= GOOD_GLOW));
 }
 
@@ -79,7 +79,7 @@ async function schedule(report: TonightReport, settings: Settings, lang: Lang, t
     });
   };
 
-  const { leadMin } = glowAlertFor(settings);
+  const { leadMin } = settings.glowAlert;
   const worthIt = (g: { fire: boolean; score: number } | null | undefined) => glowWorthAlert(g, settings);
 
   // After sunset, ask how the sky turned out: for the first followed city only, so it stays one question an evening.
@@ -103,8 +103,8 @@ async function schedule(report: TonightReport, settings: Settings, lang: Lang, t
     const forgetAt = sunset.getTime() + DAY;
     const beforeSunset = sunset.getTime() > now;
 
-    // By default only a 火烧云 is worth a nudge; members can ask for a likely 晚霞 too.
-    // The first comes ahead of sunset to plan around (2h unless a member picked otherwise);
+    // By default only a 火烧云 is worth a nudge; a likely 晚霞 can be asked for too.
+    // The first comes ahead of sunset to plan around (2h unless picked otherwise);
     // a 火烧云 gets a second, 30 min ahead, to head outside.
     // The forecast may already be for tomorrow's sunset, so it keys and times off its own.
     const glowSunset = r.glowSunset;
@@ -132,11 +132,11 @@ async function schedule(report: TonightReport, settings: Settings, lang: Lang, t
       }
     }
 
-    // Members also hear about a sunrise worth getting up for, the evening before, in time to set an alarm.
+    // A sunrise worth getting up for is announced too, the evening before, in time to set an alarm.
     // Found later than about 1am, it is left alone rather than buzzing in the small hours.
     const dawn = r.week?.[r.dawnIndex];
     const dg = dawn?.dawn;
-    if (dawn && dg && dawn.sunrise.getTime() - now > DAWN_LATEST_MS && settings.member && settings.alerts.glow && worthIt(dg)) {
+    if (dawn && dg && dawn.sunrise.getTime() - now > DAWN_LATEST_MS && settings.alerts.glow && worthIt(dg)) {
       const time = formatTime(dawn.sunrise, r.city.timezone, lang);
       await alert(
         `dawn-fire:${r.city.id}:${dawn.sunrise.toISOString().slice(0, 10)}`,

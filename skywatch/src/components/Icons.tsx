@@ -196,11 +196,3 @@ export function CompassIcon(p: IconProps) {
   );
 }
 
-export function LockIcon(p: IconProps) {
-  return (
-    <Frame {...p}>
-      <Path d="M6.5 11h11a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z" />
-      <Path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3" />
-    </Frame>
-  );
-}

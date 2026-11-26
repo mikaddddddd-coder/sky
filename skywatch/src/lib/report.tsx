@@ -81,7 +81,7 @@ export function ReportProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cityKey, settings.alerts, settings.glowAlert, settings.member, lang]);
+  }, [cityKey, settings.alerts, settings.glowAlert, lang]);
   const refresh = useCallback(() => load(true), [load]);
 
   // Show the saved report for these cities until the network answers; never over a fresher one.

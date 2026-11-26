@@ -1,0 +1,26 @@
+1. SCREEN RECORDING
+Attached to this submission (App Review Information > Attachment). Recorded on iPhone running the latest iOS, starting from launching the app. Look Up has no account registration or login, no user-generated content shared with other users, and no paid content or features, so none of those flows exist.
+
+2. PURPOSE AND AUDIENCE
+Look Up tells people whether tonight's sunset (or tomorrow's sunrise) is likely to be colourful, before they head out. It is for anyone who enjoys the sky: photographers, people who like an evening walk, and casual sky-watchers. It turns weather data (cloud layers, haze, humidity) into a simple "chance of a colourful sunset" score, gives golden hour and blue hour times and the direction to face, and adds tonight's moon, Venus, meteor showers, and a "Birth Sky" view of the moon on the day you were born. Its value is saving a wasted trip on a grey evening, and not missing a great one.
+
+3. HOW TO USE THE MAIN FEATURES
+No login, credentials or sample files are needed. All features are free and available immediately.
+- Tonight tab: on first launch the app asks permission to send alerts (optional) and shows three default cities (London, New York and Tokyo on an English-language device). Swipe sideways to switch cities. Tap the sunset card for the 7-day outlook and shooting guide; tap Sun, Moon or Venus for details; scroll down for upcoming sky events.
+- Cities tab: tap "Use current location" to see the sky where you are (asks for location, optional), or search any city (e.g. "London") and tap it to follow it, up to five.
+- Birth Sky tab: pick a date and place of birth to see that evening's moon and bright planets; "Make a share card" saves a poster to Photos (asks for add-only photo permission).
+- Settings tab: language (English / Chinese), alerts for great sunsets and moon/Venus nights, a Dynamic Island countdown, and an optional after-sunset feedback question.
+- Widgets: add the "Look Up" widget from the Home Screen or Lock Screen widget gallery.
+
+4. EXTERNAL SERVICES
+- Open-Meteo (open-meteo.com): weather forecast, air quality and city search data.
+- Apple Core Location and the system geocoder: device location and city names.
+- Our own small server on Cloudflare Workers (lookup.minxi.work): receives anonymous answers to the optional after-sunset question ("how did the sky look?") to tune the forecast, and hosts the privacy policy. No personal data, no IP addresses stored.
+- Notifications are local notifications scheduled on the device; no push service is used.
+- No authentication service, no payment processor, no analytics or advertising SDKs, and no AI services.
+
+5. REGIONAL DIFFERENCES
+The app works the same in every region where it is offered. Forecasts are calculated for whichever city the user picks. The interface is in English or Simplified Chinese depending on the device language. The app is not offered in mainland China.
+
+6. REGULATED INDUSTRY / THIRD-PARTY MATERIAL
+Not applicable. The app is not in a regulated industry. Weather data comes from Open-Meteo under its CC BY 4.0 licence, credited in Settings > About; the full-moon photograph is public-domain NASA imagery. Astronomical positions are calculated on the device with the open-source astronomy-engine library (MIT licence).

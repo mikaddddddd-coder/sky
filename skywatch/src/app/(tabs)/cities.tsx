@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Group, groupStyles, Row } from '../../components/GroupList';
 import { CheckIcon, CloseIcon, LocateIcon, PlusIcon, SearchIcon } from '../../components/Icons';
 import { SceneBackground } from '../../components/SceneBackground';
-import { CITIES, HERE_ID, type City } from '../../constants/cities';
+import { builtInCityList, HERE_ID, suggestedCities, type City } from '../../constants/cities';
 import { colors, spacing, type } from '../../constants/theme';
 import { cityFromPlace, locateHere, placeRegion, searchPlaces, type Place } from '../../lib/places';
 import { MAX_CITIES, useSettings } from '../../lib/settings';
@@ -89,7 +89,7 @@ export default function CitiesScreen() {
     const ids = settings.cityIds.filter((id) => id !== city.id);
     update({
       customCities: settings.customCities.filter((c) => c.id !== city.id),
-      cityIds: ids.length ? ids : [CITIES[0].id],
+      cityIds: ids.length ? ids : [suggestedCities(lang)[0].id],
     });
   };
 
@@ -165,7 +165,7 @@ export default function CitiesScreen() {
 
           <Group title={t('cityGroupCities')} footer={t('citiesHint')}>
             {searched.map((c) => cityRow(c, true))}
-            {CITIES.map((c) => cityRow(c, false))}
+            {builtInCityList(lang, settings.cityIds).map((c) => cityRow(c, false))}
           </Group>
         </ScrollView>
       </SafeAreaView>

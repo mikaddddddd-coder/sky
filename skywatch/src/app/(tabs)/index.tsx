@@ -6,7 +6,6 @@ import { CheckInCard } from '../../components/CheckInCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Glass, type Aura } from '../../components/Glass';
 import { GlowOrb } from '../../components/GlowOrb';
-import { LockIcon } from '../../components/Icons';
 import { OrbitLimb } from '../../components/OrbitLimb';
 import { aodLevel, vividLevel } from '../../lib/sky/sunsetGlow';
 import { MoonDisc } from '../../components/MoonDisc';
@@ -110,32 +109,29 @@ function CityHeader({ r }: { r: CityReport }) {
   );
 }
 
-/** Morning or evening; sunrise glows are for members, so the switch sends others to the offer. */
-function KindSwitch({ kind, locked, onChange }: { kind: GlowKind; locked: boolean; onChange: (k: GlowKind) => void }) {
+/** Morning or evening. */
+function KindSwitch({ kind, onChange }: { kind: GlowKind; onChange: (k: GlowKind) => void }) {
   const { t } = useSettings();
-  const option = (k: GlowKind, label: string, lock = false) => (
+  const option = (k: GlowKind, label: string) => (
     <Pressable onPress={() => onChange(k)} hitSlop={6} style={[styles.kindOption, kind === k && styles.kindOn]}>
-      {lock && <LockIcon color="rgba(245,243,255,0.55)" size={12} />}
       <Text style={[styles.kindText, kind === k && styles.kindTextOn]}>{label}</Text>
     </Pressable>
   );
   return (
     <View style={styles.kindSwitch}>
-      {option('dawn', t('dawnTitle'), locked)}
+      {option('dawn', t('dawnTitle'))}
       {option('dusk', t('glowTitle'))}
     </View>
   );
 }
 
 function GlowCard({ r }: { r: CityReport }) {
-  const { t, settings } = useSettings();
+  const { t } = useSettings();
   const router = useRouter();
-  const member = settings.member;
-  // Members see whichever glow comes next; everyone else sees the evening.
+  // Whichever glow comes next, unless the switch picked the other.
   const nextIsDawn = !!r.week && r.week[r.dawnIndex].sunrise.getTime() < r.week[r.duskIndex].sunset.getTime();
   const [picked, setPicked] = useState<GlowKind | null>(null);
-  const kind: GlowKind = member ? (picked ?? (nextIsDawn ? 'dawn' : 'dusk')) : 'dusk';
-  const pick = (k: GlowKind) => (k === 'dawn' && !member ? router.push('/member') : setPicked(k));
+  const kind: GlowKind = picked ?? (nextIsDawn ? 'dawn' : 'dusk');
   const index = kind === 'dawn' ? r.dawnIndex : r.duskIndex;
   const g = kind === 'dawn' ? r.week?.[index]?.dawn ?? null : r.glow;
   const onPress = () => router.push({ pathname: '/glow', params: { city: r.city.id, kind } });
@@ -155,7 +151,7 @@ function GlowCard({ r }: { r: CityReport }) {
       height={HEIGHT.hero}
       aura={aura}
       backdrop={<GlowOrb score={g?.score ?? 0} fire={fire} />}
-      accessory={<KindSwitch kind={kind} locked={!member} onChange={pick} />}
+      accessory={<KindSwitch kind={kind} onChange={setPicked} />}
       onPress={g ? onPress : undefined}
     >
       <View style={styles.cardRow}>

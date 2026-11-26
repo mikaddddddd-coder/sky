@@ -12,7 +12,7 @@ import { Rise } from '../../components/Motion';
 import { Panel, PanelStat, panelText } from '../../components/Panel';
 import { SceneBackground } from '../../components/SceneBackground';
 import { CJK_FONT, Text } from '../../components/Text';
-import { CITIES, findCity, type City } from '../../constants/cities';
+import { findCity, suggestedCities, type City } from '../../constants/cities';
 import { colors, spacing, type } from '../../constants/theme';
 import { dirKey, formatTime } from '../../lib/format';
 import { cityFromPlace, placeRegion, searchPlaces, type Place } from '../../lib/places';
@@ -170,7 +170,7 @@ export default function BirthScreen() {
   const shareRef = useRef<ComponentRef<typeof View>>(null);
 
   const followed = settings.cityIds.map((id) => findCity(id, settings.customCities)).filter((c): c is City => !!c);
-  const place = birth?.place ?? followed[0] ?? CITIES[0];
+  const place = birth?.place ?? followed[0] ?? suggestedCities(lang)[0];
   const sky = useMemo(() => (birth ? computeBirthSky(birth) : null), [birth]);
 
   // Search as you type, after a short pause, cancelling the previous request.

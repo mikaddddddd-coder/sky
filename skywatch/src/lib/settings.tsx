@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLocales } from 'expo-localization';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { DEFAULT_CITY_IDS, type City } from '../constants/cities';
+import { defaultCityIds, type City } from '../constants/cities';
 import { toSimplified } from './i18n/hanzi';
 import type { Birth } from './sky/birth';
 import { translate, type Lang, type StringKey } from './i18n/strings';
@@ -16,48 +16,27 @@ export type Settings = {
    * missing in settings saved before it existed, which counts as on.
    */
   alerts: { glow: boolean; sky: boolean; feedback?: boolean; island?: boolean };
-  /**
-   * Which glows earn an alert, and how long before sunset the first one comes. Members choose;
-   * everyone else gets the defaults: only a 火烧云, 2 hours ahead.
-   */
+  /** Which glows earn an alert, and how long before sunset the first one comes. */
   glowAlert: GlowAlert;
-  /** Membership unlocks the 7-day outlook and sunrise glows. Set locally until payments exist. */
-  member: boolean;
-  /**
-   * The one 火烧云 whose shooting guide a non-member has had for free, as `kind:date`.
-   * The first 火烧云 they open spends it; that same glow stays open, later ones don't.
-   */
-  guideTaste: string | null;
   /** For the birth-sky tab. Kept only on this phone, never sent anywhere. */
   birth: Birth | null;
 };
 
 /**
- * Off while the app is free: everyone gets what membership would unlock, and the offer is hidden.
- * Turn on together with real in-app purchases (and a commercial weather-data plan).
- */
-export const PAYMENTS_ENABLED = false;
-const withAccess = (s: Settings): Settings => (PAYMENTS_ENABLED ? s : { ...s, member: true });
-
-/**
  * How many cities can be followed at once. Each brings a handful of alerts and iOS keeps at most
- * 64 pending, so this also keeps them all scheduled. More cities may become a paid unlock later.
+ * 64 pending, so this also keeps them all scheduled.
  */
 export const MAX_CITIES = 5;
 
 export type GlowAlert = { level: 'fire' | 'good'; leadMin: 60 | 120 | 180 };
-export const DEFAULT_GLOW_ALERT: GlowAlert = { level: 'fire', leadMin: 120 };
-/** What actually applies: a member's own choice, or the defaults for everyone else. */
-export const glowAlertFor = (s: Settings): GlowAlert => (s.member ? s.glowAlert : DEFAULT_GLOW_ALERT);
+const DEFAULT_GLOW_ALERT: GlowAlert = { level: 'fire', leadMin: 120 };
 
 const DEFAULTS: Settings = {
   language: 'system',
-  cityIds: DEFAULT_CITY_IDS,
+  cityIds: defaultCityIds(systemLang()),
   customCities: [],
   alerts: { glow: true, sky: true, feedback: true, island: true },
   glowAlert: DEFAULT_GLOW_ALERT,
-  member: false,
-  guideTaste: null,
   birth: null,
 };
 
@@ -86,9 +65,9 @@ export const resolveLang = (s: Settings): Lang => (s.language === 'system' ? sys
 /** The saved settings, read straight from storage, for work done outside the app's screens. */
 export async function loadSettings(): Promise<Settings> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
-  if (!raw) return withAccess(DEFAULTS);
+  if (!raw) return DEFAULTS;
   const saved = { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) };
-  return withAccess({ ...saved, customCities: saved.customCities.map(simplifyCity) });
+  return { ...saved, customCities: saved.customCities.map(simplifyCity) };
 }
 
 /** Cities saved before search simplified their names may still carry traditional ones. */
@@ -119,7 +98,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<SettingsContextValue>(() => {
     const lang = resolveLang(settings);
-    return { settings: withAccess(settings), ready, update, lang, t: (key, vars) => translate(lang, key, vars) };
+    return { settings, ready, update, lang, t: (key, vars) => translate(lang, key, vars) };
   }, [settings, ready, update]);
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
